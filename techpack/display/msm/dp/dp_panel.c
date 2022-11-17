@@ -8,7 +8,6 @@
 #include <drm/drm_fixed.h>
 #include "dp_debug.h"
 #include <drm/drm_edid.h>
-
 #define DP_KHZ_TO_HZ 1000
 #define DP_PANEL_DEFAULT_BPP 24
 #define DP_MAX_DS_PORT_COUNT 1

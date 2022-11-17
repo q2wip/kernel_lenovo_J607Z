@@ -30,7 +30,6 @@
 #include "sde_hdcp.h"
 #include "dp_debug.h"
 #include "sde_dbg.h"
-
 #define DP_MST_DEBUG(fmt, ...) DP_DEBUG(fmt, ##__VA_ARGS__)
 
 #define dp_display_state_show(x) { \
@@ -877,7 +876,6 @@ static void dp_display_host_init(struct dp_display_private *dp)
 	dp_display_abort_hdcp(dp, false);
 
 	dp_display_state_add(DP_STATE_INITIALIZED);
-
 	/* log this as it results from user action of cable connection */
 	DP_INFO("[OK]\n");
 }
@@ -960,7 +958,6 @@ static void dp_display_host_deinit(struct dp_display_private *dp)
 	dp->aux->state = 0;
 
 	dp_display_state_remove(DP_STATE_INITIALIZED);
-
 	/* log this as it results from user action of cable dis-connection */
 	DP_INFO("[OK]\n");
 }
@@ -2699,7 +2696,6 @@ static int dp_display_fsa4480_callback(struct notifier_block *self,
 {
 	return 0;
 }
-
 static int dp_display_init_aux_switch(struct dp_display_private *dp)
 {
 	int rc = 0;
@@ -2738,7 +2734,6 @@ static int dp_display_init_aux_switch(struct dp_display_private *dp)
 end:
 	return rc;
 }
-
 static int dp_display_mst_install(struct dp_display *dp_display,
 			struct dp_mst_drm_install_info *mst_install_info)
 {
@@ -3165,7 +3160,6 @@ static int dp_display_probe(struct platform_device *pdev)
 		rc = -EPROBE_DEFER;
 		goto error;
 	}
-
 	rc = dp_display_create_workqueue(dp);
 	if (rc) {
 		DP_ERR("Failed to create workqueue\n");

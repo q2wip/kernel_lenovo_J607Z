@@ -1871,3 +1871,25 @@ void hidinput_disconnect(struct hid_device *hid)
 }
 EXPORT_SYMBOL_GPL(hidinput_disconnect);
 
+// ==================== 核心符号缺失终极修复 ====================
+
+/* 1. 修复 undefined symbol: gesture_flag */
+int gesture_flag = 0;
+EXPORT_SYMBOL(gesture_flag);
+
+/* 2. 修复 undefined symbol: irq_wake_enabled */
+int irq_wake_enabled = 0;
+EXPORT_SYMBOL(irq_wake_enabled);
+
+/* 3. 修复 undefined symbol: hdmi_status */
+int hdmi_status = 0;
+EXPORT_SYMBOL(hdmi_status);
+
+/* 4. 修复 undefined symbol: report_power_key (显式带 void 避免 strict-prototypes 警告) */
+void report_power_key(void)
+{
+    /* 留空主体即可，作为链接器的符号入口 */
+}
+EXPORT_SYMBOL(report_power_key);
+
+// ==============================================================

@@ -46,14 +46,14 @@ static inline void update_vdso_data(struct vdso_data *vdata,
 	vdso_ts->nsec	= nsec;
 
 	/* Copy MONOTONIC time for BOOTTIME */
-	sec	= vdso_ts->sec;
+	sec = vdso_ts->sec;
 	/* Add the boot offset */
-	sec	+= tk->monotonic_to_boot.tv_sec;
-	nsec	+= (u64)tk->monotonic_to_boot.tv_nsec << tk->tkr_mono.shift;
+	sec += tk->monotonic_to_boot.tv_sec;
+	nsec += (u64)tk->monotonic_to_boot.tv_nsec << tk->tkr_mono.shift;
 
 	/* CLOCK_BOOTTIME */
 	vdso_ts		= &vdata[CS_HRES_COARSE].basetime[CLOCK_BOOTTIME];
-	vdso_ts->sec	= sec;
+	vdso_ts->sec = sec;
 
 	while (nsec >= (((u64)NSEC_PER_SEC) << tk->tkr_mono.shift)) {
 		nsec -= (((u64)NSEC_PER_SEC) << tk->tkr_mono.shift);
@@ -62,9 +62,9 @@ static inline void update_vdso_data(struct vdso_data *vdata,
 	vdso_ts->nsec	= nsec;
 
 	/* CLOCK_MONOTONIC_RAW */
-	vdso_ts		= &vdata[CS_RAW].basetime[CLOCK_MONOTONIC_RAW];
-	vdso_ts->sec	= tk->raw_sec;
-	vdso_ts->nsec	= tk->tkr_raw.xtime_nsec;
+	vdso_ts = &vdata[CS_RAW].basetime[CLOCK_MONOTONIC_RAW];
+	vdso_ts->sec = tk->raw_sec;
+	vdso_ts->nsec = tk->tkr_raw.xtime_nsec;
 
 	/* CLOCK_TAI */
 	vdso_ts		= &vdata[CS_HRES_COARSE].basetime[CLOCK_TAI];
@@ -110,7 +110,7 @@ void update_vsyscall(struct timekeeper *tk)
 	nsec		= nsec + tk->wall_to_monotonic.tv_nsec;
 	vdso_ts->sec	+= __iter_div_u64_rem(nsec, NSEC_PER_SEC, &vdso_ts->nsec);
 
-	update_vdso_data(vdata, tk);
+		update_vdso_data(vdata, tk);
 
 	__arch_update_vsyscall(vdata, tk);
 
@@ -123,8 +123,8 @@ void update_vsyscall_tz(void)
 {
 	struct vdso_data *vdata = __arch_get_k_vdso_data();
 
-	vdata[CS_HRES_COARSE].tz_minuteswest = sys_tz.tz_minuteswest;
-	vdata[CS_HRES_COARSE].tz_dsttime = sys_tz.tz_dsttime;
+		vdata[CS_HRES_COARSE].tz_minuteswest = sys_tz.tz_minuteswest;
+		vdata[CS_HRES_COARSE].tz_dsttime = sys_tz.tz_dsttime;
 
 	__arch_sync_vdso_data(vdata);
 }

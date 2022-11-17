@@ -273,7 +273,6 @@ int cam_mem_get_cpu_buf(int32_t buf_handle, uintptr_t *vaddr_ptr, size_t *len)
 		return -EINVAL;
 
 	idx = CAM_MEM_MGR_GET_HDL_IDX(buf_handle);
-
 	if (idx >= CAM_MEM_BUFQ_MAX || idx <= 0)
 		return -EINVAL;
 

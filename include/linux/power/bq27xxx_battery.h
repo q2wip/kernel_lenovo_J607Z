@@ -50,6 +50,7 @@ struct bq27xxx_reg_cache {
 	int energy;
 	int flags;
 	int health;
+	int chem_id;
 };
 
 struct bq27xxx_device_info {

@@ -478,7 +478,6 @@ static int32_t cam_cci_transfer_end(struct cci_device *cci_dev,
 			CAM_ERR(CAM_CCI, "failed rc: %d", rc);
 			return rc;
 		}
-
 		rc = cam_cci_wait_report_cmd(cci_dev, master, queue);
 		if (rc < 0) {
 			CAM_ERR(CAM_CCI, "failed rc %d", rc);
@@ -501,7 +500,6 @@ static int32_t cam_cci_transfer_end(struct cci_device *cci_dev,
 			CAM_ERR(CAM_CCI, "failed rc %d", rc);
 			return rc;
 		}
-
 		rc = cam_cci_wait_report_cmd(cci_dev, master, queue);
 		if (rc < 0) {
 			CAM_ERR(CAM_CCI, "Failed rc %d", rc);

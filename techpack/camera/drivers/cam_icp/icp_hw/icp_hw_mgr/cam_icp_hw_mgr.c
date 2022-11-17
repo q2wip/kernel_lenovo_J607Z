@@ -4289,7 +4289,6 @@ static int cam_icp_mgr_process_cmd_desc(struct cam_icp_hw_mgr *hw_mgr,
 
 			*fw_cmd_buf_iova_addr =
 				(*fw_cmd_buf_iova_addr + cmd_desc[i].offset);
-
 			rc = cam_mem_get_cpu_buf(cmd_desc[i].mem_handle,
 				&cpu_addr, &len);
 			if (rc || !cpu_addr) {
@@ -5274,7 +5273,6 @@ hw_dump:
 		req_ts.tv_nsec/NSEC_PER_USEC,
 		cur_ts.tv_sec,
 		cur_ts.tv_nsec/NSEC_PER_USEC);
-
 	rc  = cam_mem_get_cpu_buf(dump_args->buf_handle,
 		&icp_dump_args.cpu_addr, &icp_dump_args.buf_len);
 	if (rc) {
