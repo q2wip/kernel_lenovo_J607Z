@@ -397,7 +397,7 @@ static inline bool bpf_verifier_log_full(const struct bpf_verifier_log *log)
 static inline bool bpf_verifier_log_needed(const struct bpf_verifier_log *log)
 {
 	return log &&
-		((log->level && log->ubuf && !bpf_verifier_log_full(log)) ||
+		((log->level && log->kbuf && log->ubuf && !bpf_verifier_log_full(log)) ||
 		 log->level == BPF_LOG_KERNEL);
 }
 
