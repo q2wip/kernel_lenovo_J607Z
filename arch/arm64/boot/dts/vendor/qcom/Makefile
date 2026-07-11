@@ -128,6 +128,7 @@ dtbo-$(CONFIG_ARCH_LAGOON) += \
 		lagoon-mtp-overlay.dtbo \
                 gauguin-sm6350-overlay.dtbo \
 		lagoon-mtp-usbc-overlay.dtbo \
+		arnoz-overlay.dtbo \
 		lagoon-cdp-overlay.dtbo \
 		lagoon-atp-overlay.dtbo \
 		lagoon-qrd-overlay.dtbo
@@ -136,6 +137,7 @@ lagoon-rumi-overlay.dtbo-base := lagoon.dtb
 lagoon-mtp-overlay.dtbo-base := lagoon.dtb
 lagoon-mtp-usbc-overlay.dtbo-base := lagoon.dtb
 gauguin-sm6350-overlay.dtbo-base := lagoon.dtb
+arnoz-overlay.dtbo-base := arnoz.dtb
 lagoon-cdp-overlay.dtbo-base := lagoon.dtb
 lagoon-atp-overlay.dtbo-base := lagoon.dtb
 lagoon-qrd-overlay.dtbo-base := lagoon.dtb
@@ -145,6 +147,7 @@ dtb-$(CONFIG_ARCH_LAGOON) += \
 		lagoon-mtp.dtb \
 		lagoon-mtp-usbc.dtb \
                 gauguin-sm6350.dtb \
+		arnoz.dtb \
 		lagoon-cdp.dtb \
 		lagoon-atp.dtb \
 		lagoon-qrd.dtb
