@@ -1,3 +1,4 @@
+// Host tool: unifdef — header preprocessing
 cc_binary_host {
     name: "unifdef",
     srcs: ["scripts/unifdef.c"],
@@ -6,6 +7,7 @@ cc_binary_host {
     },
 }
 
+// Generate headers_install.sh from kernel source script
 genrule {
     name: "gen-headers_install.sh",
     srcs: ["scripts/headers_install.sh"],
@@ -21,13 +23,14 @@ cc_prebuilt_binary {
     srcs: [":gen-headers_install.sh"],
 }
 
-// Use the following for verbose output from kernel_headers.py.
-// kernel_headers_verbose = "--verbose "
-// Use the following for minimal output from kernel_headers.py.
+// Verbosity control for kernel_headers.py.
+// Set to "--verbose " for debug output during header generation.
 kernel_headers_verbose = ""
 
+// Include architecture-specific header generation blueprints
 build = ["gen_headers_arm.bp", "gen_headers_arm64.bp"]
 
+// Export kernel UAPI headers to vendor and recovery builds
 cc_library_headers {
     name: "qti_kernel_headers",
     arch: {

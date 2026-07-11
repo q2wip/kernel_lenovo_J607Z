@@ -1,6 +1,16 @@
-#Android makefile to build kernel as a part of Android Build
-PERL		= perl
+#
+# Copyright (C) 2021 The LineageOS Project
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Android makefile to build kernel as part of Android Build
+#
 
+PERL = perl
+
+# ---------------------------------------------------------------------------
+# Kernel target path
+# ---------------------------------------------------------------------------
 KERNEL_TARGET := $(strip $(INSTALLED_KERNEL_TARGET))
 ifeq ($(KERNEL_TARGET),)
 INSTALLED_KERNEL_TARGET := $(PRODUCT_OUT)/kernel
@@ -11,6 +21,9 @@ $(info Using DTB Image)
 INSTALLED_DTBIMAGE_TARGET := $(PRODUCT_OUT)/dtb.img
 endif
 
+# ---------------------------------------------------------------------------
+# Build environment
+# ---------------------------------------------------------------------------
 TARGET_KERNEL_MAKE_ENV := $(strip $(TARGET_KERNEL_MAKE_ENV))
 ifeq ($(TARGET_KERNEL_MAKE_ENV),)
 KERNEL_MAKE_ENV :=
@@ -18,6 +31,9 @@ else
 KERNEL_MAKE_ENV := $(TARGET_KERNEL_MAKE_ENV)
 endif
 
+# ---------------------------------------------------------------------------
+# Architecture
+# ---------------------------------------------------------------------------
 TARGET_KERNEL_ARCH := $(strip $(TARGET_KERNEL_ARCH))
 ifeq ($(TARGET_KERNEL_ARCH),)
 KERNEL_ARCH := arm
@@ -45,6 +61,9 @@ KERNEL_CONFIG_OVERRIDE := CONFIG_ANDROID_BINDER_IPC_32BIT=y
 endif
 endif
 
+# ---------------------------------------------------------------------------
+# Cross compiler
+# ---------------------------------------------------------------------------
 TARGET_KERNEL_CROSS_COMPILE_PREFIX := $(strip $(TARGET_KERNEL_CROSS_COMPILE_PREFIX))
 ifeq ($(TARGET_KERNEL_CROSS_COMPILE_PREFIX),)
 KERNEL_CROSS_COMPILE := arm-eabi-
@@ -52,23 +71,33 @@ else
 KERNEL_CROSS_COMPILE := $(shell pwd)/$(TARGET_TOOLS_PREFIX)
 endif
 
+# ---------------------------------------------------------------------------
+# LLVM / clang toolchain
+# ---------------------------------------------------------------------------
 ifeq ($(KERNEL_LLVM_SUPPORT), true)
-  ifeq ($(KERNEL_SD_LLVM_SUPPORT), true)  #Using sd-llvm compiler
+  ifeq ($(KERNEL_SD_LLVM_SUPPORT), true)
+    # Using sd-llvm compiler
     ifeq ($(shell echo $(SDCLANG_PATH) | head -c 1),/)
-       KERNEL_LLVM_BIN := $(SDCLANG_PATH)/clang
+      KERNEL_LLVM_BIN := $(SDCLANG_PATH)/clang
     else
-       KERNEL_LLVM_BIN := $(shell pwd)/$(SDCLANG_PATH)/clang
+      KERNEL_LLVM_BIN := $(shell pwd)/$(SDCLANG_PATH)/clang
     endif
     $(warning "Using sdllvm" $(KERNEL_LLVM_BIN))
   else
-     KERNEL_LLVM_BIN := $(shell pwd)/$(CLANG) #Using aosp-llvm compiler
+    # Using aosp-llvm compiler
+    KERNEL_LLVM_BIN := $(shell pwd)/$(CLANG)
     $(warning "Using aosp-llvm" $(KERNEL_LLVM_BIN))
   endif
 endif
 
+# ---------------------------------------------------------------------------
+# Main kernel build (skip if prebuilt)
+# ---------------------------------------------------------------------------
 ifeq ($(TARGET_PREBUILT_KERNEL),)
 
-KERNEL_GCC_NOANDROID_CHK := $(shell (echo "int main() {return 0;}" | $(KERNEL_CROSS_COMPILE)gcc -E -mno-android - > /dev/null 2>&1 ; echo $$?))
+KERNEL_GCC_NOANDROID_CHK := $(shell \
+    (echo "int main() {return 0;}" | \
+     $(KERNEL_CROSS_COMPILE)gcc -E -mno-android - > /dev/null 2>&1 ; echo $$?))
 
 real_cc :=
 ifeq ($(KERNEL_LLVM_SUPPORT),true)
@@ -79,18 +108,21 @@ KERNEL_CFLAGS := KCFLAGS=-mno-android
 endif
 endif
 
+# ---------------------------------------------------------------------------
+# Source directory layout (new style kernel/msm-* vs legacy)
+# ---------------------------------------------------------------------------
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 current_dir := $(notdir $(patsubst %/,%,$(dir $(mkfile_path))))
 TARGET_KERNEL := msm-$(TARGET_KERNEL_VERSION)
 ifeq ($(TARGET_KERNEL),$(current_dir))
-    # New style, kernel/msm-version
+    # New style: kernel/msm-version
     BUILD_ROOT_LOC := ../../
     TARGET_KERNEL_SOURCE := kernel/$(TARGET_KERNEL)
     KERNEL_OUT := $(TARGET_OUT_INTERMEDIATES)/kernel/$(TARGET_KERNEL)
     KERNEL_SYMLINK := $(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ
     KERNEL_USR := $(KERNEL_SYMLINK)/usr
 else
-    # Legacy style, kernel source directly under kernel
+    # Legacy style: kernel source directly under kernel/
     KERNEL_LEGACY_DIR := true
     BUILD_ROOT_LOC := ../
     TARGET_KERNEL_SOURCE := kernel
@@ -103,7 +135,12 @@ ifeq ($(KERNEL_DEFCONFIG)$(wildcard $(KERNEL_CONFIG)),)
 $(error Kernel configuration not defined, cannot build kernel)
 else
 
-TARGET_USES_UNCOMPRESSED_KERNEL := $(shell grep "CONFIG_BUILD_ARM64_UNCOMPRESSED_KERNEL=y" $(TARGET_KERNEL_SOURCE)/arch/arm64/configs/$(KERNEL_DEFCONFIG))
+# ---------------------------------------------------------------------------
+# Determine kernel image type (compressed / uncompressed)
+# ---------------------------------------------------------------------------
+TARGET_USES_UNCOMPRESSED_KERNEL := $(shell grep \
+    "CONFIG_BUILD_ARM64_UNCOMPRESSED_KERNEL=y" \
+    $(TARGET_KERNEL_SOURCE)/arch/arm64/configs/$(KERNEL_DEFCONFIG))
 ifeq ($(TARGET_USES_UNCOMPRESSED_KERNEL),)
     ifeq ($(KERNEL_ARCH),arm64)
         TARGET_PREBUILT_INT_KERNEL := $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/Image.gz
@@ -120,6 +157,9 @@ $(info Using appended DTB)
 TARGET_PREBUILT_INT_KERNEL := $(TARGET_PREBUILT_INT_KERNEL)-dtb
 endif
 
+# ---------------------------------------------------------------------------
+# Headers and modules output paths
+# ---------------------------------------------------------------------------
 KERNEL_HEADERS_INSTALL := $(KERNEL_OUT)/usr
 KERNEL_MODULES_INSTALL ?= system
 KERNEL_MODULES_OUT ?= $(PRODUCT_OUT)/$(KERNEL_MODULES_INSTALL)/lib/modules
@@ -128,22 +168,31 @@ TARGET_PREBUILT_KERNEL := $(TARGET_PREBUILT_INT_KERNEL)
 
 BOARD_VENDOR_KERNEL_MODULES += $(wildcard $(KERNEL_MODULES_OUT)/*.ko)
 
+# ---------------------------------------------------------------------------
+# Helper: move kernel modules to flat output directory
+# ---------------------------------------------------------------------------
 define mv-modules
-mdpath=`find $(KERNEL_MODULES_OUT) -type f -name modules.dep`;\
-if [ "$$mdpath" != "" ];then\
-mpath=`dirname $$mdpath`;\
-ko=`find $$mpath/kernel -type f -name *.ko`;\
-for i in $$ko; do mv $$i $(KERNEL_MODULES_OUT)/; done;\
-fi
+  mdpath=`find $(KERNEL_MODULES_OUT) -type f -name modules.dep`; \
+  if [ "$$mdpath" != "" ]; then \
+    mpath=`dirname $$mdpath`; \
+    ko=`find $$mpath/kernel -type f -name *.ko`; \
+    for i in $$ko; do mv $$i $(KERNEL_MODULES_OUT)/; done; \
+  fi
 endef
 
+# ---------------------------------------------------------------------------
+# Helper: clean up module folder after moving
+# ---------------------------------------------------------------------------
 define clean-module-folder
-mdpath=`find $(KERNEL_MODULES_OUT) -type f -name modules.dep`;\
-if [ "$$mdpath" != "" ];then\
-mpath=`dirname $$mdpath`; rm -rf $$mpath;\
-fi
+  mdpath=`find $(KERNEL_MODULES_OUT) -type f -name modules.dep`; \
+  if [ "$$mdpath" != "" ]; then \
+    mpath=`dirname $$mdpath`; rm -rf $$mpath; \
+  fi
 endef
 
+# ---------------------------------------------------------------------------
+# Kernel symlink (new style)
+# ---------------------------------------------------------------------------
 ifneq ($(KERNEL_LEGACY_DIR),true)
 $(KERNEL_USR): $(KERNEL_HEADERS_INSTALL)
 	rm -rf $(KERNEL_SYMLINK)
@@ -152,75 +201,192 @@ $(KERNEL_USR): $(KERNEL_HEADERS_INSTALL)
 $(TARGET_PREBUILT_INT_KERNEL): $(KERNEL_USR)
 endif
 
+# ---------------------------------------------------------------------------
+# Kernel output directory
+# ---------------------------------------------------------------------------
 $(KERNEL_OUT):
 	mkdir -p $(KERNEL_OUT)
 
+# ---------------------------------------------------------------------------
+# Generate .config from defconfig (+ optional override)
+# ---------------------------------------------------------------------------
 $(KERNEL_CONFIG): $(KERNEL_OUT)
-	$(MAKE) -C $(TARGET_KERNEL_SOURCE) O=$(BUILD_ROOT_LOC)$(KERNEL_OUT) $(KERNEL_MAKE_ENV) ARCH=$(KERNEL_ARCH) CROSS_COMPILE=$(KERNEL_CROSS_COMPILE) $(real_cc) $(KERNEL_DEFCONFIG)
+	$(MAKE) -C $(TARGET_KERNEL_SOURCE) \
+	    O=$(BUILD_ROOT_LOC)$(KERNEL_OUT) \
+	    $(KERNEL_MAKE_ENV) \
+	    ARCH=$(KERNEL_ARCH) \
+	    CROSS_COMPILE=$(KERNEL_CROSS_COMPILE) \
+	    $(real_cc) \
+	    $(KERNEL_DEFCONFIG)
 	$(hide) if [ ! -z "$(KERNEL_CONFIG_OVERRIDE)" ]; then \
-			echo "Overriding kernel config with '$(KERNEL_CONFIG_OVERRIDE)'"; \
-			echo $(KERNEL_CONFIG_OVERRIDE) >> $(KERNEL_OUT)/.config; \
-			$(MAKE) -C $(TARGET_KERNEL_SOURCE) O=$(BUILD_ROOT_LOC)$(KERNEL_OUT) $(KERNEL_MAKE_ENV) ARCH=$(KERNEL_ARCH) CROSS_COMPILE=$(KERNEL_CROSS_COMPILE) $(real_cc) oldconfig; fi
+	    echo "Overriding kernel config with '$(KERNEL_CONFIG_OVERRIDE)'"; \
+	    echo $(KERNEL_CONFIG_OVERRIDE) >> $(KERNEL_OUT)/.config; \
+	    $(MAKE) -C $(TARGET_KERNEL_SOURCE) \
+	        O=$(BUILD_ROOT_LOC)$(KERNEL_OUT) \
+	        $(KERNEL_MAKE_ENV) \
+	        ARCH=$(KERNEL_ARCH) \
+	        CROSS_COMPILE=$(KERNEL_CROSS_COMPILE) \
+	        $(real_cc) \
+	        oldconfig; \
+	fi
 
+# ---------------------------------------------------------------------------
+# Build kernel (with appended DTB)
+# ---------------------------------------------------------------------------
 ifeq ($(TARGET_KERNEL_APPEND_DTB), true)
 TARGET_PREBUILT_INT_KERNEL_IMAGE := $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/Image
 $(TARGET_PREBUILT_INT_KERNEL_IMAGE): $(KERNEL_USR)
 $(TARGET_PREBUILT_INT_KERNEL_IMAGE): $(KERNEL_OUT) $(KERNEL_HEADERS_INSTALL)
 	$(hide) echo "Building kernel modules..."
-	$(MAKE) -C $(TARGET_KERNEL_SOURCE) O=$(BUILD_ROOT_LOC)$(KERNEL_OUT) $(KERNEL_MAKE_ENV) ARCH=$(KERNEL_ARCH) CROSS_COMPILE=$(KERNEL_CROSS_COMPILE) $(real_cc) $(KERNEL_CFLAGS) Image
-	$(MAKE) -C $(TARGET_KERNEL_SOURCE) O=$(BUILD_ROOT_LOC)$(KERNEL_OUT) $(KERNEL_MAKE_ENV) ARCH=$(KERNEL_ARCH) CROSS_COMPILE=$(KERNEL_CROSS_COMPILE) $(real_cc) $(KERNEL_CFLAGS) modules
-	$(MAKE) -C $(TARGET_KERNEL_SOURCE) O=$(BUILD_ROOT_LOC)$(KERNEL_OUT) INSTALL_MOD_PATH=$(BUILD_ROOT_LOC)../$(KERNEL_MODULES_INSTALL) INSTALL_MOD_STRIP=1 $(KERNEL_MAKE_ENV) ARCH=$(KERNEL_ARCH) CROSS_COMPILE=$(KERNEL_CROSS_COMPILE) $(real_cc) modules_install
+	$(MAKE) -C $(TARGET_KERNEL_SOURCE) \
+	    O=$(BUILD_ROOT_LOC)$(KERNEL_OUT) \
+	    $(KERNEL_MAKE_ENV) \
+	    ARCH=$(KERNEL_ARCH) \
+	    CROSS_COMPILE=$(KERNEL_CROSS_COMPILE) \
+	    $(real_cc) $(KERNEL_CFLAGS) Image
+	$(MAKE) -C $(TARGET_KERNEL_SOURCE) \
+	    O=$(BUILD_ROOT_LOC)$(KERNEL_OUT) \
+	    $(KERNEL_MAKE_ENV) \
+	    ARCH=$(KERNEL_ARCH) \
+	    CROSS_COMPILE=$(KERNEL_CROSS_COMPILE) \
+	    $(real_cc) $(KERNEL_CFLAGS) modules
+	$(MAKE) -C $(TARGET_KERNEL_SOURCE) \
+	    O=$(BUILD_ROOT_LOC)$(KERNEL_OUT) \
+	    INSTALL_MOD_PATH=$(BUILD_ROOT_LOC)../$(KERNEL_MODULES_INSTALL) \
+	    INSTALL_MOD_STRIP=1 \
+	    $(KERNEL_MAKE_ENV) \
+	    ARCH=$(KERNEL_ARCH) \
+	    CROSS_COMPILE=$(KERNEL_CROSS_COMPILE) \
+	    $(real_cc) \
+	    modules_install
 	$(mv-modules)
 	$(clean-module-folder)
 
 $(TARGET_PREBUILT_INT_KERNEL): $(TARGET_PREBUILT_INT_KERNEL_IMAGE)
 	$(hide) echo "Building kernel..."
 	$(hide) rm -rf $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/dts
-	$(MAKE) -C $(TARGET_KERNEL_SOURCE) O=$(BUILD_ROOT_LOC)$(KERNEL_OUT) $(KERNEL_MAKE_ENV) ARCH=$(KERNEL_ARCH) CROSS_COMPILE=$(KERNEL_CROSS_COMPILE) $(real_cc) $(KERNEL_CFLAGS)
+	$(MAKE) -C $(TARGET_KERNEL_SOURCE) \
+	    O=$(BUILD_ROOT_LOC)$(KERNEL_OUT) \
+	    $(KERNEL_MAKE_ENV) \
+	    ARCH=$(KERNEL_ARCH) \
+	    CROSS_COMPILE=$(KERNEL_CROSS_COMPILE) \
+	    $(real_cc) $(KERNEL_CFLAGS)
+
+# ---------------------------------------------------------------------------
+# Build kernel (no appended DTB — default path)
+# ---------------------------------------------------------------------------
 else
 TARGET_PREBUILT_INT_KERNEL_IMAGE := $(TARGET_PREBUILT_INT_KERNEL)
 $(TARGET_PREBUILT_INT_KERNEL): $(KERNEL_OUT) $(KERNEL_HEADERS_INSTALL)
 	$(hide) echo "Building kernel..."
-	$(MAKE) -C $(TARGET_KERNEL_SOURCE) O=$(BUILD_ROOT_LOC)$(KERNEL_OUT) $(KERNEL_MAKE_ENV) ARCH=$(KERNEL_ARCH) CROSS_COMPILE=$(KERNEL_CROSS_COMPILE) $(real_cc) $(KERNEL_CFLAGS)
-	$(MAKE) -C $(TARGET_KERNEL_SOURCE) O=$(BUILD_ROOT_LOC)$(KERNEL_OUT) $(KERNEL_MAKE_ENV) ARCH=$(KERNEL_ARCH) CROSS_COMPILE=$(KERNEL_CROSS_COMPILE) $(real_cc) $(KERNEL_CFLAGS) modules
-	$(MAKE) -C $(TARGET_KERNEL_SOURCE) O=$(BUILD_ROOT_LOC)$(KERNEL_OUT) INSTALL_MOD_PATH=$(BUILD_ROOT_LOC)../$(KERNEL_MODULES_INSTALL) INSTALL_MOD_STRIP=1 $(KERNEL_MAKE_ENV) ARCH=$(KERNEL_ARCH) CROSS_COMPILE=$(KERNEL_CROSS_COMPILE) $(real_cc) modules_install
+	$(MAKE) -C $(TARGET_KERNEL_SOURCE) \
+	    O=$(BUILD_ROOT_LOC)$(KERNEL_OUT) \
+	    $(KERNEL_MAKE_ENV) \
+	    ARCH=$(KERNEL_ARCH) \
+	    CROSS_COMPILE=$(KERNEL_CROSS_COMPILE) \
+	    $(real_cc) $(KERNEL_CFLAGS)
+	$(MAKE) -C $(TARGET_KERNEL_SOURCE) \
+	    O=$(BUILD_ROOT_LOC)$(KERNEL_OUT) \
+	    $(KERNEL_MAKE_ENV) \
+	    ARCH=$(KERNEL_ARCH) \
+	    CROSS_COMPILE=$(KERNEL_CROSS_COMPILE) \
+	    $(real_cc) $(KERNEL_CFLAGS) modules
+	$(MAKE) -C $(TARGET_KERNEL_SOURCE) \
+	    O=$(BUILD_ROOT_LOC)$(KERNEL_OUT) \
+	    INSTALL_MOD_PATH=$(BUILD_ROOT_LOC)../$(KERNEL_MODULES_INSTALL) \
+	    INSTALL_MOD_STRIP=1 \
+	    $(KERNEL_MAKE_ENV) \
+	    ARCH=$(KERNEL_ARCH) \
+	    CROSS_COMPILE=$(KERNEL_CROSS_COMPILE) \
+	    $(real_cc) \
+	    modules_install
 	$(mv-modules)
 	$(clean-module-folder)
 endif
 
+# ---------------------------------------------------------------------------
+# Generate kernel headers
+# ---------------------------------------------------------------------------
 $(KERNEL_HEADERS_INSTALL): $(KERNEL_OUT)
 	$(hide) if [ ! -z "$(KERNEL_HEADER_DEFCONFIG)" ]; then \
-			rm -f $(BUILD_ROOT_LOC)$(KERNEL_CONFIG); \
-			$(MAKE) -C $(TARGET_KERNEL_SOURCE) O=$(BUILD_ROOT_LOC)$(KERNEL_OUT) $(KERNEL_MAKE_ENV) ARCH=$(KERNEL_HEADER_ARCH) CROSS_COMPILE=$(KERNEL_CROSS_COMPILE) $(real_cc) $(KERNEL_HEADER_DEFCONFIG); \
-			$(MAKE) -C $(TARGET_KERNEL_SOURCE) O=$(BUILD_ROOT_LOC)$(KERNEL_OUT) $(KERNEL_MAKE_ENV) ARCH=$(KERNEL_HEADER_ARCH) CROSS_COMPILE=$(KERNEL_CROSS_COMPILE) $(real_cc) headers_install;\
-			if [ -d "$(KERNEL_HEADERS_INSTALL)/include/bringup_headers" ]; then \
-				cp -Rf  $(KERNEL_HEADERS_INSTALL)/include/bringup_headers/* $(KERNEL_HEADERS_INSTALL)/include/ ;\
-			fi ;\
-			fi
+	    rm -f $(BUILD_ROOT_LOC)$(KERNEL_CONFIG); \
+	    $(MAKE) -C $(TARGET_KERNEL_SOURCE) \
+	        O=$(BUILD_ROOT_LOC)$(KERNEL_OUT) \
+	        $(KERNEL_MAKE_ENV) \
+	        ARCH=$(KERNEL_HEADER_ARCH) \
+	        CROSS_COMPILE=$(KERNEL_CROSS_COMPILE) \
+	        $(real_cc) $(KERNEL_HEADER_DEFCONFIG); \
+	    $(MAKE) -C $(TARGET_KERNEL_SOURCE) \
+	        O=$(BUILD_ROOT_LOC)$(KERNEL_OUT) \
+	        $(KERNEL_MAKE_ENV) \
+	        ARCH=$(KERNEL_HEADER_ARCH) \
+	        CROSS_COMPILE=$(KERNEL_CROSS_COMPILE) \
+	        $(real_cc) headers_install; \
+	    if [ -d "$(KERNEL_HEADERS_INSTALL)/include/bringup_headers" ]; then \
+	        cp -Rf $(KERNEL_HEADERS_INSTALL)/include/bringup_headers/* \
+	            $(KERNEL_HEADERS_INSTALL)/include/; \
+	    fi; \
+	fi
 	$(hide) if [ "$(KERNEL_HEADER_DEFCONFIG)" != "$(KERNEL_DEFCONFIG)" ]; then \
-			echo "Used a different defconfig for header generation"; \
-			rm -f $(BUILD_ROOT_LOC)$(KERNEL_CONFIG); \
-			$(MAKE) -C $(TARGET_KERNEL_SOURCE) O=$(BUILD_ROOT_LOC)$(KERNEL_OUT) $(KERNEL_MAKE_ENV) ARCH=$(KERNEL_ARCH) CROSS_COMPILE=$(KERNEL_CROSS_COMPILE) $(real_cc) $(KERNEL_DEFCONFIG); fi
+	    echo "Used a different defconfig for header generation"; \
+	    rm -f $(BUILD_ROOT_LOC)$(KERNEL_CONFIG); \
+	    $(MAKE) -C $(TARGET_KERNEL_SOURCE) \
+	        O=$(BUILD_ROOT_LOC)$(KERNEL_OUT) \
+	        $(KERNEL_MAKE_ENV) \
+	        ARCH=$(KERNEL_ARCH) \
+	        CROSS_COMPILE=$(KERNEL_CROSS_COMPILE) \
+	        $(real_cc) $(KERNEL_DEFCONFIG); \
+	fi
 	$(hide) if [ ! -z "$(KERNEL_CONFIG_OVERRIDE)" ]; then \
-			echo "Overriding kernel config with '$(KERNEL_CONFIG_OVERRIDE)'"; \
-			echo $(KERNEL_CONFIG_OVERRIDE) >> $(KERNEL_OUT)/.config; \
-			$(MAKE) -C $(TARGET_KERNEL_SOURCE) O=$(BUILD_ROOT_LOC)$(KERNEL_OUT) $(KERNEL_MAKE_ENV) ARCH=$(KERNEL_ARCH) CROSS_COMPILE=$(KERNEL_CROSS_COMPILE) $(real_cc) oldconfig; fi
+	    echo "Overriding kernel config with '$(KERNEL_CONFIG_OVERRIDE)'"; \
+	    echo $(KERNEL_CONFIG_OVERRIDE) >> $(KERNEL_OUT)/.config; \
+	    $(MAKE) -C $(TARGET_KERNEL_SOURCE) \
+	        O=$(BUILD_ROOT_LOC)$(KERNEL_OUT) \
+	        $(KERNEL_MAKE_ENV) \
+	        ARCH=$(KERNEL_ARCH) \
+	        CROSS_COMPILE=$(KERNEL_CROSS_COMPILE) \
+	        $(real_cc) oldconfig; \
+	fi
 
-# Creating a dtb.img once the kernel is compiled if TARGET_KERNEL_APPEND_DTB is set to be false
+# ---------------------------------------------------------------------------
+# Create dtb.img from compiled DTB blobs
+# ---------------------------------------------------------------------------
 $(INSTALLED_DTBIMAGE_TARGET): $(TARGET_PREBUILT_INT_KERNEL)
 	cat $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/dts/vendor/qcom/*.dtb > $@
 
+# ---------------------------------------------------------------------------
+# Phony targets: kernel tags
+# ---------------------------------------------------------------------------
 .PHONY: kerneltags
 kerneltags: $(KERNEL_OUT) $(KERNEL_CONFIG)
-	$(MAKE) -C $(TARGET_KERNEL_SOURCE) O=$(BUILD_ROOT_LOC)$(KERNEL_OUT) $(KERNEL_MAKE_ENV) ARCH=$(KERNEL_ARCH) CROSS_COMPILE=$(KERNEL_CROSS_COMPILE) $(real_cc) tags
+	$(MAKE) -C $(TARGET_KERNEL_SOURCE) \
+	    O=$(BUILD_ROOT_LOC)$(KERNEL_OUT) \
+	    $(KERNEL_MAKE_ENV) \
+	    ARCH=$(KERNEL_ARCH) \
+	    CROSS_COMPILE=$(KERNEL_CROSS_COMPILE) \
+	    $(real_cc) tags
 
+# ---------------------------------------------------------------------------
+# Phony targets: kernel config menu
+# ---------------------------------------------------------------------------
 .PHONY: kernelconfig
 kernelconfig: $(KERNEL_OUT) $(KERNEL_CONFIG)
 	env KCONFIG_NOTIMESTAMP=true \
-	     $(MAKE) -C $(TARGET_KERNEL_SOURCE) O=$(BUILD_ROOT_LOC)$(KERNEL_OUT) $(KERNEL_MAKE_ENV) ARCH=$(KERNEL_ARCH) CROSS_COMPILE=$(KERNEL_CROSS_COMPILE) $(real_cc) menuconfig
+	    $(MAKE) -C $(TARGET_KERNEL_SOURCE) \
+	        O=$(BUILD_ROOT_LOC)$(KERNEL_OUT) \
+	        $(KERNEL_MAKE_ENV) \
+	        ARCH=$(KERNEL_ARCH) \
+	        CROSS_COMPILE=$(KERNEL_CROSS_COMPILE) \
+	        $(real_cc) menuconfig
 	env KCONFIG_NOTIMESTAMP=true \
-	     $(MAKE) -C $(TARGET_KERNEL_SOURCE) O=$(BUILD_ROOT_LOC)$(KERNEL_OUT) $(KERNEL_MAKE_ENV) ARCH=$(KERNEL_ARCH) CROSS_COMPILE=$(KERNEL_CROSS_COMPILE) $(real_cc) savedefconfig
-	cp $(KERNEL_OUT)/defconfig $(TARGET_KERNEL_SOURCE)/arch/$(KERNEL_ARCH)/configs/$(KERNEL_DEFCONFIG)
+	    $(MAKE) -C $(TARGET_KERNEL_SOURCE) \
+	        O=$(BUILD_ROOT_LOC)$(KERNEL_OUT) \
+	        $(KERNEL_MAKE_ENV) \
+	        ARCH=$(KERNEL_ARCH) \
+	        CROSS_COMPILE=$(KERNEL_CROSS_COMPILE) \
+	        $(real_cc) savedefconfig
+	cp $(KERNEL_OUT)/defconfig \
+	    $(TARGET_KERNEL_SOURCE)/arch/$(KERNEL_ARCH)/configs/$(KERNEL_DEFCONFIG)
 
 endif
 endif
