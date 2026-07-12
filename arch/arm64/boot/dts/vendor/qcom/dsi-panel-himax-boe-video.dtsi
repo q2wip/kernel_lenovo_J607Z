@@ -44,6 +44,16 @@
 		qcom,mdss-dsi-t-clk-post = <2>;
 		qcom,mdss-dsi-t-clk-pre = <0x2d>;
 		qcom,dsi-select-clocks = "mux_byte_clk0", "mux_pixel_clk0";
+		qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_dcs";
+		qcom,mdss-dsi-bl-min-level = <1>;
+		qcom,mdss-dsi-bl-max-level = <0xfff>;
+		qcom,mdss-brightness-max-level = <0xff>;
+		qcom,platform-te-gpio = <&tlmm 23 0>;
+		qcom,platform-en-gpio = <&tlmm 49 0>;
+		qcom,platform-bklight-en-gpio = <&tlmm 41 0>;
+		qcom,lcm-enp-gpio = <&tlmm 47 0>;
+		qcom,lcm-enn-gpio = <&tlmm 55 0>;
+		qcom,platform-reset-gpio = <&pm6150l_gpios 9 0>;
 
 		qcom,mdss-dsi-display-timings {
 			timing@0 {
