@@ -1,0 +1,81 @@
+
+/* Touchscreen pinctrl - Himax HX83102 on qupv3_se2_spi */
+
+/* Active states (not defined in lagoon-pinctrl.dtsi) */
+&tlmm {
+	ts_mux {
+		ts_int_active: ts_int_active {
+			mux {
+				pins = "gpio22";
+				function = "gpio";
+			};
+			config {
+				pins = "gpio22";
+				drive-strength = <16>;
+				bias-pull-down;
+			};
+		};
+		ts_reset_active: ts_reset_active {
+			mux {
+				pins = "gpio21";
+				function = "gpio";
+			};
+			config {
+				pins = "gpio21";
+				drive-strength = <16>;
+				bias-pull-up;
+			};
+		};
+	};
+};
+
+/* Suspend states: override lagoon-pinctrl defaults (drive-strength 6 -> 16) */
+&ts_int_suspend {
+	config {
+		drive-strength = <16>;
+	};
+};
+
+&ts_reset_suspend {
+	config {
+		drive-strength = <16>;
+	};
+};
+
+/* SPI CS pin mux for qupv3_se2 (touch chip select) */
+&qupv3_se2_spi_active {
+	mux {
+		pins = "gpio12", "gpio13", "gpio14";
+		function = "qup02";
+	};
+	config {
+		pins = "gpio12", "gpio13", "gpio14";
+		drive-strength = <6>;
+		bias-disable;
+	};
+};
+
+&qupv3_se2_spi_sleep {
+	mux {
+		pins = "gpio12", "gpio13", "gpio14";
+		function = "gpio";
+	};
+	config {
+		pins = "gpio12", "gpio13", "gpio14";
+		drive-strength = <6>;
+		bias-pull-down;
+	};
+};
+
+/* Volume up key - pm6350 GPIO 2 */
+&pm6350_gpios {
+	key_vol_up {
+		key_vol_up_default: key_vol_up_default {
+			pins = "gpio2";
+			function = "normal";
+			input-enable;
+			bias-pull-up;
+			power-source = <0>;
+		};
+	};
+};

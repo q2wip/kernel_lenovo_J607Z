@@ -1,0 +1,15 @@
+/dts-v1/;
+
+#include "lagoon.dtsi"
+#include "arnoz.dtsi"
+
+/ {
+	model = "Lenovo arnoz_prc";
+	compatible = "qcom,lagoon-mtp", "qcom,lagoon", "qcom,mtp";
+	qcom,board-id = <8 0>;
+
+	memory {
+		device_type = "memory";
+		reg = <0 0 0 0>;
+	};
+};

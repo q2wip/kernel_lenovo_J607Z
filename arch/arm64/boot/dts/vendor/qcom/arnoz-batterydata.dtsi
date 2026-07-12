@@ -1,0 +1,30 @@
+qcom,LC_P532_SCUD_7700mAH_PM7250B {
+	qcom,max-voltage-uv = <4398000>;
+	qcom,fg-cc-cv-threshold-uv = <4371000>;
+	qcom,fastchg-current-ma = <4400>;
+	qcom,batt-id-kohm = <110>;
+	qcom,battery-beta = <3380>;
+	qcom,battery-therm-kohm = <10>;
+	qcom,battery-type = "P532_SCUD_7700mAH";
+	qcom,qg-batt-profile-ver = <100>;
+
+	qcom,jeita-fcc-ranges = <0   150 2541872
+				 151 450 4400000
+				 451 500 3850000>;
+	qcom,jeita-fv-ranges = <0   150 4398000
+				151 450 4398000
+				451 500 4200000>;
+	qcom,jeita-soft-thresholds = <0x2554 0xfdc>;
+	qcom,jeita-hard-thresholds = <0x36b9 0xdbf>;
+	qcom,jeita-soft-hys-thresholds = <0x2452 0x1052>;
+
+	qcom,fcc1-temp-lut {
+		qcom,lut-col-legend = <0 10 25 40 50>;
+		qcom,lut-data = <7266 7522 7710 7770 7786>;
+	};
+
+	qcom,fcc2-temp-lut {
+		qcom,lut-col-legend = <(-10) 0 10 25 40 50>;
+		qcom,lut-data = <7519 7628 7709 7683 7703 7702>;
+	};
+};

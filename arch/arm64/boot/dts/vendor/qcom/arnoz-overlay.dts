@@ -1,0 +1,20 @@
+/dts-v1/;
+/plugin/;
+
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+#include <dt-bindings/clock/qcom,gcc-lagoon.h>
+#include "arnoz.dtsi"
+
+/ {
+	model = "Lenovo arnoz_prc";
+	compatible = "qcom,lagoon-mtp", "qcom,lagoon", "qcom,mtp";
+	qcom,msm-id = <0x1b2 0x10000 0x1cb 0x10000>;
+	qcom,board-id = <8 0>;
+};
+
+// DWC3 core driver (CIP 4.19.325) requires 'ref' clock; lagoon DTS doesn't provide it.
+// This causes "Failed to get clk 'ref': -2" and USB enumeration failure.
+&{/soc/a600000.ssusb/dwc3@a600000} {
+	clocks = <&gcc GCC_USB3_PRIM_CLKREF_CLK>;
+	clock-names = "ref";
+};
