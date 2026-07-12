@@ -1583,11 +1583,16 @@ static int gmu_init(struct kgsl_device *device)
 	struct gmu_dev_ops *ops = GMU_DEVICE_OPS(device);
 	int ret;
 
-	ret = ops->load_firmware(device);
+	/* Allocate HFI + dump memory before firmware load — a619 GMU
+	 * firmware accesses the noncached kernel region (HFI at 0x60000000+)
+	 * immediately after gmu_cache_finalize completes, before the
+	 * subsequent gmu_memory_probe call would have set it up.
+	 */
+	ret = gmu_memory_probe(device);
 	if (ret)
 		return ret;
 
-	ret = gmu_memory_probe(device);
+	ret = ops->load_firmware(device);
 	if (ret)
 		return ret;
 
