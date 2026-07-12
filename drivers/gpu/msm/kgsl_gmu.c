@@ -143,6 +143,11 @@ static int alloc_and_map(struct gmu_device *gmu, struct gmu_memdesc *md,
 	if (md->hostptr == NULL)
 		return -ENOMEM;
 
+	/* Unmap any stale PTE first — lazy IOMMU unmapping can leave valid
+	 * PTEs from a previous GMU session, causing -EEXIST on re-init.
+	 * Harmless when no stale PTE exists (iommu_unmap returns 0).
+	 */
+	iommu_unmap(domain, md->gmuaddr, md->size);
 	ret = iommu_map(domain, md->gmuaddr, md->physaddr, md->size, attrs);
 
 	if (ret) {
