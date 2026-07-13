@@ -10,6 +10,34 @@
 	compatible = "qcom,lagoon-mtp", "qcom,lagoon", "qcom,mtp";
 	qcom,msm-id = <0x1b2 0x10000 0x1cb 0x10000>;
 	qcom,board-id = <8 0>;
+
+	/*
+	 * Bringup GPU overrides — explicitly set key parameters for A619
+	 * to minimize reliance on driver defaults. The bootloader selects
+	 * lagoon.dtb (wildcard board-id <0 0>) as base, and this overlay
+	 * is applied on top.
+	 */
+	fragment@1 {
+		target-path = "/soc/qcom,kgsl-3d0@3d00000";
+		__overlay__ {
+			qcom,highest-bank-bit = <13>;
+			qcom,chipid = <0x06010900>;
+		};
+	};
+
+	fragment@2 {
+		target-path = "/soc/arm,smmu-kgsl@3d40000";
+		__overlay__ {
+			qcom,no-dynamic-asid;
+		};
+	};
+
+	fragment@3 {
+		target-path = "/soc/qcom,gmu@3d6a000";
+		__overlay__ {
+			status = "ok";
+		};
+	};
 };
 
 // DWC3 core driver (CIP 4.19.325) requires 'ref' clock; lagoon DTS doesn't provide it.
