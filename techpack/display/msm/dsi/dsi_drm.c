@@ -616,6 +616,9 @@ int dsi_conn_set_info_blob(struct drm_connector *connector,
 
 	dsi_display->drm_conn = connector;
 
+	pr_info("DSI_IB: set_info_blob CALLED display_type=%s panel=%d\n",
+		dsi_display->display_type, !!dsi_display->panel);
+
 	sde_kms_info_add_keystr(info,
 		"display type", dsi_display->display_type);
 
@@ -740,7 +743,8 @@ int dsi_conn_set_info_blob(struct drm_connector *connector,
 
 	sde_kms_info_add_keyint(info, "bit_depth", bpp);
 
-end:
+ end:
+	pr_info("DSI_IB: blob=[%s]\n", ((struct sde_kms_info *)info)->data);
 	return 0;
 }
 
