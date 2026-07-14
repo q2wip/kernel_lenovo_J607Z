@@ -767,6 +767,9 @@ int drm_mode_getblob_ioctl(struct drm_device *dev,
 	if (!blob)
 		return -ENOENT;
 
+	pr_info("DSI_IB: getblob_ioctl id=%u len=%u data=[%.40s]\n",
+		out_resp->blob_id, blob->length, (char *)blob->data);
+
 	if (out_resp->length == blob->length) {
 		if (copy_to_user(u64_to_user_ptr(out_resp->data),
 				 blob->data,

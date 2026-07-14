@@ -2442,6 +2442,12 @@ int sde_connector_set_blob_data(struct drm_connector *conn,
 			SDE_KMS_INFO_DATA(info),
 			SDE_KMS_INFO_DATALEN(info),
 			prop_id);
+
+	if (prop_id == CONNECTOR_PROP_SDE_INFO && c_conn->blob_caps)
+		pr_info("DSI_IB: blob_caps assigned id=%u len=%zu\n",
+			c_conn->blob_caps->base.id,
+			c_conn->blob_caps->length);
+
 exit:
 	vfree(info);
 
