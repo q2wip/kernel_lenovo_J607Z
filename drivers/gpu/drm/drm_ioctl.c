@@ -806,6 +806,9 @@ long drm_ioctl(struct file *filp,
        if (DRM_IOCTL_TYPE(cmd) != DRM_IOCTL_BASE)
                return -ENOTTY;
 
+	pr_info("DSI_IB: drm_ioctl nr=%u pid=%d comm=%s\n",
+		nr, task_pid_nr(current), current->comm);
+
 	is_driver_ioctl = nr >= DRM_COMMAND_BASE && nr < DRM_COMMAND_END;
 
 	if (is_driver_ioctl) {
