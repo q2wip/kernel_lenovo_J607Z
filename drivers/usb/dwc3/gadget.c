@@ -2487,6 +2487,8 @@ static int dwc3_gadget_pullup(struct usb_gadget *g, int is_on)
 	ktime_t			diff;
 
 	is_on = !!is_on;
+	pr_info("USB_DBG: dwc3_gadget_pullup ENTRY is_on=%d vbus=%d drv=%d err=%d\n",
+		is_on, dwc->vbus_active, !!dwc->gadget_driver, dwc->err_evt_seen);
 	spin_lock_irqsave(&dwc->lock, flags);
 	dwc->softconnect = is_on;
 
@@ -2575,6 +2577,7 @@ done:
 	pm_runtime_put_autosuspend(dwc->dev);
 	dbg_event(0xFF, "Pullup put",
 		atomic_read(&dwc->dev->power.usage_count));
+	pr_info("USB_DBG: dwc3_gadget_pullup EXIT ret=%d\n", ret);
 	return ret;
 }
 
@@ -2792,6 +2795,8 @@ static int dwc3_gadget_start(struct usb_gadget *g,
 	unsigned long		flags;
 	int			ret = 0;
 
+	pr_info("USB_DBG: dwc3_gadget_start ENTRY driver=%s\n",
+		driver ? driver->function : "(none)");
 	dbg_event(0xFF, "Gadgetstart", 0);
 	spin_lock_irqsave(&dwc->lock, flags);
 	if (dwc->gadget_driver) {

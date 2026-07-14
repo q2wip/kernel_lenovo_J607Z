@@ -2465,6 +2465,8 @@ static int composite_bind(struct usb_gadget *gadget,
 	struct usb_composite_driver	*composite = to_cdriver(gdriver);
 	int				status = -ENOMEM;
 
+	pr_info("USB_DBG: composite_bind ENTRY gadget=%s driver=%s\n",
+		dev_name(&gadget->dev), composite ? composite->name : "(none)");
 	cdev = kzalloc(sizeof *cdev, GFP_KERNEL);
 	if (!cdev)
 		return status;
@@ -2500,9 +2502,12 @@ static int composite_bind(struct usb_gadget *gadget,
 		WARNING(cdev, "userspace failed to provide iSerialNumber\n");
 
 	INFO(cdev, "%s ready\n", composite->name);
+	pr_info("USB_DBG: composite_bind EXIT OK name=%s\n", composite->name);
 	return 0;
 
 fail:
+	pr_info("USB_DBG: composite_bind EXIT err=%d name=%s\n",
+		status, composite ? composite->name : "(none)");
 	__composite_unbind(gadget, false);
 	return status;
 }

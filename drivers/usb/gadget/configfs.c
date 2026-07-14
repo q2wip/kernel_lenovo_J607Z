@@ -1309,6 +1309,9 @@ static int configfs_composite_bind(struct usb_gadget *gadget,
 	unsigned			i;
 	int				ret;
 
+	pr_info("USB_DBG: configfs_composite_bind ENTRY gadget=%s name=%s\n",
+		dev_name(&gadget->dev), composite->name);
+
 	/* the gi->lock is hold by the caller */
 	gi->unbind = 0;
 	cdev->gadget = gadget;
@@ -1432,9 +1435,11 @@ static int configfs_composite_bind(struct usb_gadget *gadget,
 	}
 
 	usb_ep_autoconfig_reset(cdev->gadget);
+	pr_info("USB_DBG: configfs_composite_bind EXIT OK\n");
 	return 0;
 
 err_purge_funcs:
+	pr_info("USB_DBG: configfs_composite_bind EXIT err=%d\n", ret);
 	purge_configs_funcs(gi);
 err_comp_cleanup:
 	composite_dev_cleanup(cdev);

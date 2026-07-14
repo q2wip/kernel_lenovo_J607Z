@@ -705,6 +705,9 @@ int usb_gadget_connect(struct usb_gadget *gadget)
 {
 	int ret = 0;
 
+	pr_info("USB_DBG: usb_gadget_connect ENTRY gadget=%s deactivated=%d\n",
+		dev_name(&gadget->dev), gadget->deactivated);
+
 	if (!gadget->ops->pullup) {
 		ret = -EOPNOTSUPP;
 		goto out;
@@ -725,6 +728,8 @@ int usb_gadget_connect(struct usb_gadget *gadget)
 
 out:
 	trace_usb_gadget_connect(gadget, ret);
+	pr_info("USB_DBG: usb_gadget_connect EXIT ret=%d connected=%d\n",
+		ret, gadget->connected);
 
 	return ret;
 }
@@ -1058,6 +1063,8 @@ EXPORT_SYMBOL_GPL(usb_gadget_set_state);
 
 static void usb_udc_connect_control(struct usb_udc *udc)
 {
+	pr_info("USB_DBG: usb_udc_connect_control vbus=%d gadget=%s\n",
+		udc->vbus, dev_name(&udc->gadget->dev));
 	if (udc->vbus)
 		usb_gadget_connect(udc->gadget);
 	else

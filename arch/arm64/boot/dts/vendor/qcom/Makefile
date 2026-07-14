@@ -147,7 +147,6 @@ dtb-$(CONFIG_ARCH_LAGOON) += \
 		lagoon-mtp.dtb \
 		lagoon-mtp-usbc.dtb \
                 gauguin-sm6350.dtb \
-		arnoz.dtb \
 		lagoon-cdp.dtb \
 		lagoon-atp.dtb \
 		lagoon-qrd.dtb
