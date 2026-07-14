@@ -124,9 +124,9 @@
 		qcom,sde-min-dram-ib-kbps = <1600000>;
 		qcom,sde-dram-channels = <2>;
 		qcom,sde-num-nrt-paths = <0>;
-		qcom,sde-dspp-ltm-version = <0x00010000>;
-		/* offsets are based off dspp 0 */
-		qcom,sde-dspp-ltm-off = <0x2a000>;
+		/* LTM disabled (A16 libdpps crashes on this kernel version) */
+		/* qcom,sde-dspp-ltm-version = <0x00010000>; */
+		/* qcom,sde-dspp-ltm-off = <0x2a000>; */
 
 		qcom,sde-vbif-off = <0>;
 		qcom,sde-vbif-size = <0x1044>;
