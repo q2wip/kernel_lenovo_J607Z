@@ -397,6 +397,9 @@ int drm_helper_probe_single_connector_modes(struct drm_connector *connector,
 	enum drm_connector_status old_status;
 	struct drm_modeset_acquire_ctx ctx;
 
+	pr_info("DSI_IB: probe_single ENTER conn=%s pid=%d comm=%s\n",
+		connector->name, task_pid_nr(current), current->comm);
+
 	WARN_ON(!mutex_is_locked(&dev->mode_config.mutex));
 
 	drm_modeset_acquire_init(&ctx, 0);
