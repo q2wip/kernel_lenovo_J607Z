@@ -400,6 +400,21 @@ int drm_mode_obj_get_properties_ioctl(struct drm_device *dev, void *data,
 			(uint64_t __user *)(unsigned long)(arg->prop_values_ptr),
 			&arg->count_props);
 
+	if (!ret && obj->type == DRM_MODE_OBJECT_CONNECTOR) {
+		int i, n = 0;
+		for (i = 0; i < obj->properties->count; i++) {
+			struct drm_property *p = obj->properties->properties[i];
+			uint64_t v = 0;
+			if ((p->flags & DRM_MODE_PROP_ATOMIC) && !file_priv->atomic)
+				continue;
+			__drm_object_property_get_value(obj, p, &v);
+			pr_info("DSI_IB: getprops conn=%u prop=%s id=%u flags=0x%x val=%llu\n",
+				arg->obj_id, p->name, p->base.id, p->flags, v);
+			n++;
+		}
+		pr_info("DSI_IB: getprops conn=%u total=%d\n", arg->obj_id, n);
+	}
+
 out_unref:
 	drm_mode_object_put(obj);
 out:
