@@ -380,6 +380,9 @@ int drm_mode_obj_get_properties_ioctl(struct drm_device *dev, void *data,
 	struct drm_mode_object *obj;
 	int ret = 0;
 
+	pr_info("DSI_IB: getprops ENTER obj_id=%u obj_type=%u atomic=%d\n",
+		arg->obj_id, arg->obj_type, file_priv->atomic);
+
 	if (!drm_core_check_feature(dev, DRIVER_MODESET))
 		return -EINVAL;
 
@@ -391,6 +394,8 @@ int drm_mode_obj_get_properties_ioctl(struct drm_device *dev, void *data,
 		goto out;
 	}
 	if (!obj->properties) {
+		pr_info("DSI_IB: getprops NO PROPS obj_id=%u type=%d\n",
+			arg->obj_id, obj->type);
 		ret = -EINVAL;
 		goto out_unref;
 	}
@@ -400,7 +405,7 @@ int drm_mode_obj_get_properties_ioctl(struct drm_device *dev, void *data,
 			(uint64_t __user *)(unsigned long)(arg->prop_values_ptr),
 			&arg->count_props);
 
-	if (!ret && obj->type == DRM_MODE_OBJECT_CONNECTOR) {
+	if (obj->type == DRM_MODE_OBJECT_CONNECTOR) {
 		int i, n = 0;
 		for (i = 0; i < obj->properties->count; i++) {
 			struct drm_property *p = obj->properties->properties[i];
@@ -412,7 +417,8 @@ int drm_mode_obj_get_properties_ioctl(struct drm_device *dev, void *data,
 				arg->obj_id, p->name, p->base.id, p->flags, v);
 			n++;
 		}
-		pr_info("DSI_IB: getprops conn=%u total=%d\n", arg->obj_id, n);
+		pr_info("DSI_IB: getprops conn=%u total=%d ret=%d\n",
+			arg->obj_id, n, ret);
 	}
 
 out_unref:
