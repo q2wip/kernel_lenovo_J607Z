@@ -4091,7 +4091,17 @@ static int dwc3_msm_probe(struct platform_device *pdev)
 			regulator_register_notifier(mdwc->dpdm_reg,
 					&mdwc->dpdm_nb);
 		} else {
-			/* Sync extcon state bits before starting OTG SM */
+			/*
+			 * Assume VBUS active for DRD mode so OTG SM
+			 * transitions to PERIPHERAL and sets
+			 * dwc->vbus_active. The extcon may not report
+			 * EXTCON_USB=true even when USB is connected.
+			 */
+			if (dwc3_is_otg_or_drd(dwc) && !mdwc->vbus_active) {
+				mdwc->vbus_active = true;
+			dev_err(mdwc->dev,
+				"DIAG: assume vbus_active=true for DRD\n");
+			}
 			dwc3_ext_event_notify(mdwc);
 			queue_delayed_work(mdwc->sm_usb_wq, &mdwc->sm_work, 0);
 		}
