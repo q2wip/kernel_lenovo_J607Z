@@ -1317,6 +1317,7 @@ static int configfs_composite_bind(struct usb_gadget *gadget,
 	cdev->gadget = gadget;
 	set_gadget_data(gadget, cdev);
 	ret = composite_dev_prepare(composite, cdev);
+	pr_err("DIAG: composite_dev_prepare ret=%d\n", ret);
 	if (ret)
 		return ret;
 	/* and now the gadget bind */
@@ -1420,7 +1421,11 @@ static int configfs_composite_bind(struct usb_gadget *gadget,
 
 		list_for_each_entry_safe(f, tmp, &cfg->func_list, list) {
 			list_del(&f->list);
+			pr_err("DIAG: usb_add_function ENTRY name=%s\n",
+				f->name ?: "(null)");
 			ret = usb_add_function(c, f);
+			pr_err("DIAG: usb_add_function EXIT ret=%d name=%s\n",
+				ret, f->name ?: "(null)");
 			if (ret) {
 				list_add(&f->list, &cfg->func_list);
 				goto err_purge_funcs;
@@ -1429,7 +1434,9 @@ static int configfs_composite_bind(struct usb_gadget *gadget,
 		usb_ep_autoconfig_reset(cdev->gadget);
 	}
 	if (cdev->use_os_string) {
+		pr_err("DIAG: composite_os_desc_req_prepare ENTRY\n");
 		ret = composite_os_desc_req_prepare(cdev, gadget->ep0);
+		pr_err("DIAG: composite_os_desc_req_prepare EXIT ret=%d\n", ret);
 		if (ret)
 			goto err_purge_funcs;
 	}
