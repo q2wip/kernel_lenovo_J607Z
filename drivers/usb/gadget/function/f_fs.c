@@ -3291,7 +3291,7 @@ static inline struct f_fs_opts *ffs_do_functionfs_bind(struct usb_function *f,
 		ret = wait_event_interruptible_timeout(
 			ffs_data->wait,
 			ffs_opts->dev->desc_ready,
-			msecs_to_jiffies(2000));
+			msecs_to_jiffies(10000));
 		if (ret <= 0) {
 			pr_err("DIAG: ffs desc_ready timeout (%d)\n", ret);
 			return ERR_PTR(-ENODEV);
