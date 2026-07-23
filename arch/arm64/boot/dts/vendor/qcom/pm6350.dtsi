@@ -37,7 +37,6 @@
 			qcom,pon_1 {
 				qcom,pon-type = <PON_POWER_ON_TYPE_KPDPWR>;
 				qcom,pull-up;
-				qcom,use-bark;
 				linux,code = <KEY_POWER>;
 				qcom,support-reset = <1>;
 				qcom,s1-timer = <4480>;
