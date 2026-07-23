@@ -3282,30 +3282,12 @@ static inline struct f_fs_opts *ffs_do_functionfs_bind(struct usb_function *f,
 	 */
 	if (!ffs_opts->no_configfs)
 		ffs_dev_lock();
+	ret = ffs_opts->dev->desc_ready ? 0 : -ENODEV;
 	ffs_data = ffs_opts->dev->ffs_data;
-	/* Wait up to 2s for userspace to write functionfs descriptors */
-	if (!ffs_opts->dev->desc_ready && ffs_data) {
-		pr_err("DIAG: ffs desc_ready=0, waiting up to 2s\n");
-		if (!ffs_opts->no_configfs)
-			ffs_dev_unlock();
-		ret = wait_event_interruptible_timeout(
-			ffs_data->wait,
-			ffs_opts->dev->desc_ready,
-			msecs_to_jiffies(2000));
-		if (ret <= 0) {
-			pr_err("DIAG: ffs desc_ready timeout (%d)\n", ret);
-			return ERR_PTR(-ENODEV);
-		}
-		if (!ffs_opts->no_configfs)
-			ffs_dev_lock();
-	} else {
-		if (!ffs_opts->no_configfs)
-			ffs_dev_unlock();
-		if (!ffs_data) {
-			pr_err("DIAG: ffs_data is NULL\n");
-			return ERR_PTR(-ENODEV);
-		}
-	}
+	if (!ffs_opts->no_configfs)
+		ffs_dev_unlock();
+	if (ret)
+		return ERR_PTR(ret);
 
 	func->ffs = ffs_data;
 	func->conf = c;
