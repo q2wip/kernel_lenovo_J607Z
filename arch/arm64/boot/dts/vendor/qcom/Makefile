@@ -119,7 +119,8 @@ dtb-$(CONFIG_ARCH_LITO) += lito-rumi.dtb \
                 litomagnus-mtp.dtb \
                 litomagnus-cdp.dtb \
                 orchid-mtp.dtb \
-                orchid-cdp.dtb
+                orchid-cdp.dtb \
+                arnoz.dtb
 endif
 
 ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
