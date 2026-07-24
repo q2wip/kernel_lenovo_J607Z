@@ -119,8 +119,7 @@ dtb-$(CONFIG_ARCH_LITO) += lito-rumi.dtb \
                 litomagnus-mtp.dtb \
                 litomagnus-cdp.dtb \
                 orchid-mtp.dtb \
-                orchid-cdp.dtb \
-                arnoz.dtb
+                orchid-cdp.dtb
 endif
 
 ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
@@ -142,6 +141,8 @@ arnoz-overlay.dtbo-base := arnoz.dtb
 lagoon-cdp-overlay.dtbo-base := lagoon.dtb
 lagoon-atp-overlay.dtbo-base := lagoon.dtb
 lagoon-qrd-overlay.dtbo-base := lagoon.dtb
+
+dtb-$(CONFIG_ARCH_LAGOON) += arnoz.dtb
 else
 dtb-$(CONFIG_ARCH_LAGOON) += \
 		lagoon-rumi.dtb \
@@ -150,7 +151,8 @@ dtb-$(CONFIG_ARCH_LAGOON) += \
                 gauguin-sm6350.dtb \
 		lagoon-cdp.dtb \
 		lagoon-atp.dtb \
-		lagoon-qrd.dtb
+		lagoon-qrd.dtb \
+		arnoz.dtb
 endif
 
 ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
