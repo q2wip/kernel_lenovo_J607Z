@@ -318,3 +318,29 @@
 &msm_notifier {
 	panel = <&dsi_himax_boe_video>;
 };
+
+/*
+ * Audio: J607F (arnoz) has no WSA speakers, uses WCD937x codec + CS35L41 amps.
+ * Override lagoon-audio-overlay.dtsi defaults to prevent machine driver
+ * from waiting indefinitely for non-existent WSA883x components.
+ */
+&lagoon_snd {
+	qcom,wsa-max-devs = <0>;
+	/delete-property/ qcom,wsa-devs;
+	/delete-property/ qcom,wsa-aux-dev-prefix;
+
+	qcom,codec-max-aux-devs = <0>;
+	qcom,codec-aux-devs = <&wcd937x_codec>;
+};
+
+&wcd937x_tx_slave {
+	status = "ok";
+};
+
+&wcd937x_rx_slave {
+	status = "ok";
+};
+
+&wcd937x_codec {
+	status = "ok";
+};
