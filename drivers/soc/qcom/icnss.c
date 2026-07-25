@@ -1066,6 +1066,9 @@ static int icnss_driver_event_server_arrive(void *data)
 	if (!penv)
 		return -ENODEV;
 
+	icnss_pr_info("WLFW server arrive event started, state: 0x%lx\n",
+		      penv->state);
+
 	set_bit(ICNSS_WLFW_EXISTS, &penv->state);
 	clear_bit(ICNSS_FW_DOWN, &penv->state);
 	clear_bit(ICNSS_FW_READY, &penv->state);
@@ -1296,6 +1299,9 @@ static int icnss_driver_event_fw_ready_ind(void *data)
 
 	if (!penv)
 		return -ENODEV;
+
+	icnss_pr_info("FW_READY event processing, state: 0x%lx\n",
+		      penv->state);
 
 	set_bit(ICNSS_FW_READY, &penv->state);
 	clear_bit(ICNSS_MODE_ON, &penv->state);
