@@ -2099,7 +2099,7 @@
 
 		__overlay__ {
 			qcom,model = "lito-lagoonmtp-snd-card";
-			qcom,mi2s-audio-intf = <0x01>;
+			qcom,mi2s-audio-intf = <0x00>;
 			qcom,msm-mi2s-master = <0x01 0x01 0x01 0x01 0x01 0x00>;
 			qcom,wcn-btfm = <0x01>;
 			qcom,ext-disp-audio-rx = <0x01>;
