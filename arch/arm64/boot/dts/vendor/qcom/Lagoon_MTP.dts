@@ -1965,16 +1965,16 @@
 						phandle = <0x0d>;
 					};
 
-					wcd937x-tx-slave {
-						status = "disabled";
-						compatible = "qcom,wcd937x-slave";
-						reg = <0x0a 0x1170223>;
-						phandle = <0x0f>;
-					};
+				wcd937x-tx-slave {
+					status = "okay";
+					compatible = "qcom,wcd937x-slave";
+					reg = <0x0a 0x1170223>;
+					phandle = <0x0f>;
 				};
 			};
+		};
 
-			rx-macro@3200000 {
+		rx-macro@3200000 {
 				compatible = "qcom,rx-macro";
 				reg = <0x3200000 0x00>;
 				clock-names = "rx_core_clk\0rx_npl_clk";
@@ -2010,12 +2010,12 @@
 						phandle = <0x0c>;
 					};
 
-					wcd937x_rx_slave {
-						status = "disabled";
-						compatible = "qcom,wcd937x-slave";
-						reg = <0x0a 0x1170224>;
-						phandle = <0x0e>;
-					};
+				wcd937x_rx_slave {
+					status = "okay";
+					compatible = "qcom,wcd937x-slave";
+					reg = <0x0a 0x1170224>;
+					phandle = <0x0e>;
+				};
 				};
 			};
 
@@ -2063,7 +2063,7 @@
 			};
 
 			wcd937x-codec {
-				status = "disabled";
+				status = "okay";
 				compatible = "qcom,wcd937x-codec";
 				qcom,split-codec = <0x01>;
 				qcom,rx_swr_ch_map = <0x00 0x09 0x01 0x00 0x09 0x00 0x0a 0x02 0x00 0x0a 0x01 0x0d 0x01 0x00 0x0d 0x02 0x0b 0x01 0x00 0x0b 0x02 0x0c 0x02 0x00 0x0c 0x03 0x0e 0x01 0x00 0x0e 0x04 0x0f 0x01 0x00 0x0f 0x04 0x10 0x02 0x00 0x10>;
@@ -2099,6 +2099,7 @@
 
 		__overlay__ {
 			qcom,model = "lito-lagoonmtp-snd-card";
+			qcom,mi2s-audio-intf = <0x00>;
 			qcom,msm-mi2s-master = <0x01 0x01 0x01 0x01 0x01 0x00>;
 			qcom,wcn-btfm = <0x01>;
 			qcom,ext-disp-audio-rx = <0x01>;
