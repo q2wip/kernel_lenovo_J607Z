@@ -67,6 +67,63 @@
 	};
 };
 
+/*
+ * Camera pinctrl — override lagoon-default GPIOs to match J607F (arnoz) hardware.
+ * Reference: PE Lito_MTP.dts / orchid.dts GPIO map:
+ *   MCLK0 = gpio13, Rear_RESET = gpio30
+ *   (lagoon-pinctrl.dtsi uses gpio29/gpio34 which is wrong for this board)
+ */
+&tlmm {
+	cam_sensor_mclk0_active_arnoz: cam_sensor_mclk0_active_arnoz {
+		mux {
+			pins = "gpio13";
+			function = "CAM_MCLK0";
+		};
+		config {
+			pins = "gpio13";
+			bias-disable;
+			drive-strength = <2>;
+		};
+	};
+
+	cam_sensor_mclk0_suspend_arnoz: cam_sensor_mclk0_suspend_arnoz {
+		mux {
+			pins = "gpio13";
+			function = "CAM_MCLK0";
+		};
+		config {
+			pins = "gpio13";
+			bias-pull-down;
+			drive-strength = <2>;
+		};
+	};
+
+	cam_sensor_active_rear_arnoz: cam_sensor_active_rear_arnoz {
+		mux {
+			pins = "gpio30";
+			function = "gpio";
+		};
+		config {
+			pins = "gpio30";
+			bias-disable;
+			drive-strength = <2>;
+		};
+	};
+
+	cam_sensor_suspend_rear_arnoz: cam_sensor_suspend_rear_arnoz {
+		mux {
+			pins = "gpio30";
+			function = "gpio";
+		};
+		config {
+			pins = "gpio30";
+			bias-pull-down;
+			drive-strength = <2>;
+			output-low;
+		};
+	};
+};
+
 /* Volume up key - pm6350 GPIO 2 */
 &pm6350_gpios {
 	key_vol_up {

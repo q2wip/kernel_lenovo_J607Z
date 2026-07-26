@@ -344,3 +344,6 @@
 &wcd937x_codec {
 	status = "ok";
 };
+
+/* Camera: OV13B10 rear camera on CCI0 */
+#include "arnoz-camera-sensor.dtsi"
