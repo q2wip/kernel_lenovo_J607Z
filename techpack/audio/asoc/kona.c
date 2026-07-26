@@ -92,38 +92,38 @@
 
 struct snd_soc_dai_link_component cs35l41_codec_components[] = {
 	{
-		.name = "3-0040",
+		.name = "cs35l41.0-0040",
 		.dai_name = "cs35l41-pcm",
 	},
 	{
-		.name = "3-0041",
+		.name = "cs35l41.0-0041",
 		.dai_name = "cs35l41-pcm",
 	},
 	{
-		.name = "3-0042",
+		.name = "cs35l41.0-0042",
 		.dai_name = "cs35l41-pcm",
 	},
 	{
-		.name = "3-0043",
+		.name = "cs35l41.0-0043",
 		.dai_name = "cs35l41-pcm",
 	},
 };
 
 static struct snd_soc_codec_conf cs35l41_codec_conf[] = {
 	{
-		.dev_name	= "3-0040",
+		.dev_name	= "cs35l41.0-0040",
 		.name_prefix	= "SPK1",
 	},
 	{
-		.dev_name	= "3-0041",
+		.dev_name	= "cs35l41.0-0041",
 		.name_prefix	= "SPK2",
 	},
 	{
-		.dev_name	= "3-0042",
+		.dev_name	= "cs35l41.0-0042",
 		.name_prefix	= "SPK3",
 	},
 	{
-		.dev_name	= "3-0043",
+		.dev_name	= "cs35l41.0-0043",
 		.name_prefix	= "SPK4",
 	},
 };
