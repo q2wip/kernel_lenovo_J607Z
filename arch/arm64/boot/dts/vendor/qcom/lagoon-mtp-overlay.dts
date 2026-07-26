@@ -9,4 +9,35 @@
 	compatible = "qcom,lagoon-mtp", "qcom,lagoon", "qcom,mtp";
 	qcom,msm-id = <434 0x10000>, <459 0x10000>;
 	qcom,board-id = <8 0>;
+
+	fragment@100 {
+		target = <&lagoon_snd>;
+		__overlay__ {
+			qcom,wsa-max-devs = <0>;
+			qcom,codec-max-aux-devs = <0>;
+			qcom,codec-aux-devs = <&wcd937x_codec>;
+			qcom,mi2s-audio-intf = <0>;
+		};
+	};
+
+	fragment@101 {
+		target = <&wcd937x_tx_slave>;
+		__overlay__ {
+			status = "ok";
+		};
+	};
+
+	fragment@102 {
+		target = <&wcd937x_rx_slave>;
+		__overlay__ {
+			status = "ok";
+		};
+	};
+
+	fragment@103 {
+		target = <&wcd937x_codec>;
+		__overlay__ {
+			status = "ok";
+		};
+	};
 };
