@@ -97,13 +97,11 @@
 struct snd_soc_dai_link_component cs35l41_codec_components[] = {
 	{
 		.name = CS35L41_SPEAKER_NAME,
-		//.dai_name = "cs35l41-pcm",
-		.dai_name = CS35L41_SPEAKER_NAME,
+		.dai_name = "cs35l41-pcm",
 	},
 	{
 		.name = CS35L41_RECEIVER_NAME,
-		//.dai_name = "cs35l41-pcm",
-		.dai_name = CS35L41_RECEIVER_NAME,
+		.dai_name = "cs35l41-pcm",
 	},
 };
 
