@@ -4002,8 +4002,7 @@ int cs35l41_probe(struct cs35l41_private *cs35l41,
 	switch (reg_revid) {
 	case CS35L41_REVID_A0:
 		cs35l41->amp_hibernate = CS35L41_HIBERNATE_INCOMPATIBLE;
-		if (cs35l41->pdata.fwname_use_revid)
-			cs35l41->dsp.part = "cs35l41-revA";
+		cs35l41->dsp.part = "cs35l41";
 		ret = regmap_multi_reg_write(cs35l41->regmap,
 				cs35l41_reva0_errata_patch,
 				ARRAY_SIZE(cs35l41_reva0_errata_patch));
@@ -4015,8 +4014,7 @@ int cs35l41_probe(struct cs35l41_private *cs35l41,
 		break;
 	case CS35L41_REVID_B0:
 		cs35l41->amp_hibernate = CS35L41_HIBERNATE_INCOMPATIBLE;
-		if (cs35l41->pdata.fwname_use_revid)
-			cs35l41->dsp.part = "cs35l41-revB0";
+		cs35l41->dsp.part = "cs35l41";
 		ret = regmap_multi_reg_write(cs35l41->regmap,
 				cs35l41_revb0_errata_patch,
 				ARRAY_SIZE(cs35l41_revb0_errata_patch));
@@ -4027,8 +4025,7 @@ int cs35l41_probe(struct cs35l41_private *cs35l41,
 		}
 		break;
 	case CS35L41_REVID_B2:
-		if (cs35l41->pdata.fwname_use_revid)
-			cs35l41->dsp.part = "cs35l41-revB2";
+		cs35l41->dsp.part = "cs35l41";
 		ret = regmap_multi_reg_write(cs35l41->regmap,
 				cs35l41_revb2_errata_patch,
 				ARRAY_SIZE(cs35l41_revb2_errata_patch));
