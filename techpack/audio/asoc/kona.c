@@ -928,7 +928,7 @@ static SOC_ENUM_SINGLE_EXT_DECL(bt_sample_rate_tx, bt_sample_rate_tx_text);
 static SOC_ENUM_SINGLE_EXT_DECL(afe_loopback_tx_chs, afe_loopback_tx_ch_text);
 
 static bool is_initial_boot;
-static bool codec_reg_done;
+
 static struct snd_soc_aux_dev *msm_aux_dev;
 static struct snd_soc_codec_conf *msm_codec_conf;
 static struct snd_soc_card snd_soc_card_kona_msm;
@@ -5903,7 +5903,8 @@ static int msm_int_audrx_init(struct snd_soc_pcm_runtime *rtd)
 	}
 	bolero_info_create_codec_entry(pdata->codec_root, component);
 	bolero_register_wake_irq(component, false);
-	codec_reg_done = true;
+
+
 	return 0;
 err:
 	return ret;
@@ -8856,10 +8857,8 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 	dev_info(&pdev->dev, "%s: calling snd_soc_register_card\n", __func__);
 	ret = devm_snd_soc_register_card(&pdev->dev, card);
 	if (ret == -EPROBE_DEFER) {
-		dev_info(&pdev->dev, "%s: snd_soc_register_card deferred (codec_reg_done=%d)\n",
-			 __func__, codec_reg_done);
-		if (codec_reg_done)
-			ret = -EINVAL;
+		dev_info(&pdev->dev, "%s: snd_soc_register_card deferred\n",
+			 __func__);
 		goto err;
 	} else if (ret) {
 		dev_err(&pdev->dev, "%s: snd_soc_register_card failed (%d)\n",
