@@ -323,6 +323,10 @@
  * Audio: J607F (arnoz) has no WSA speakers, uses WCD937x codec + CS35L41 amps.
  * Override lagoon-audio-overlay.dtsi defaults to prevent machine driver
  * from waiting indefinitely for non-existent WSA883x components.
+ *
+ * MI2S is disabled because the CS35L41 I2C nodes are not yet present
+ * in arnoz DTS. Without this, kona.c unconditionally adds CS35L41 DAI
+ * links and snd_soc_register_card defers forever waiting for them.
  */
 &lagoon_snd {
 	qcom,wsa-max-devs = <0>;
@@ -331,6 +335,8 @@
 
 	qcom,codec-max-aux-devs = <0>;
 	qcom,codec-aux-devs = <&wcd937x_codec>;
+
+	qcom,mi2s-audio-intf = <0>;
 };
 
 &wcd937x_tx_slave {
