@@ -90,41 +90,29 @@
 
 #define SWR_MAX_SLAVE_DEVICES 6
 
+//static atomic_t cs35l41_mclk_rsc_ref;
+
+#define CS35L41_SPEAKER_NAME "cs35l41.0-0040"
+#define CS35L41_RECEIVER_NAME "cs35l41.0-0041"
 struct snd_soc_dai_link_component cs35l41_codec_components[] = {
 	{
-		.name = "cs35l41.0-0040",
+		.name = CS35L41_SPEAKER_NAME,
 		.dai_name = "cs35l41-pcm",
 	},
 	{
-		.name = "cs35l41.0-0041",
-		.dai_name = "cs35l41-pcm",
-	},
-	{
-		.name = "cs35l41.0-0042",
-		.dai_name = "cs35l41-pcm",
-	},
-	{
-		.name = "cs35l41.0-0043",
+		.name = CS35L41_RECEIVER_NAME,
 		.dai_name = "cs35l41-pcm",
 	},
 };
 
 static struct snd_soc_codec_conf cs35l41_codec_conf[] = {
 	{
-		.dev_name	= "cs35l41.0-0040",
-		.name_prefix	= "SPK1",
+		.dev_name	= CS35L41_SPEAKER_NAME,
+		.name_prefix	= "SPK",
 	},
 	{
-		.dev_name	= "cs35l41.0-0041",
-		.name_prefix	= "SPK2",
-	},
-	{
-		.dev_name	= "cs35l41.0-0042",
-		.name_prefix	= "SPK3",
-	},
-	{
-		.dev_name	= "cs35l41.0-0043",
-		.name_prefix	= "SPK4",
+		.dev_name	= CS35L41_RECEIVER_NAME,
+		.name_prefix	= "RCV",
 	},
 };
 
