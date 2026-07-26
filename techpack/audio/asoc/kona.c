@@ -8555,6 +8555,39 @@ aux_dev_register:
 
 	card->codec_conf = msm_codec_conf;
 	card->aux_dev = msm_aux_dev;
+
+	/*
+	 * Add codec_conf for CS35L41 speaker amps to prevent
+	 * control name conflicts (4 devices register identical
+	 * mixer controls without name prefix).
+	 */
+	{
+		const char *cs35l41_prefixes[] = {"SPK1", "SPK2", "SPK3", "SPK4"};
+		const char *cs35l41_names[] = {
+			"cs35l41.3-0040", "cs35l41.3-0041",
+			"cs35l41.3-0042", "cs35l41.3-0043",
+		};
+		int cs35l41_conf_count = ARRAY_SIZE(cs35l41_prefixes);
+		struct snd_soc_codec_conf *new_conf;
+		int old_count = card->num_configs;
+		int j;
+
+		new_conf = devm_kcalloc(&pdev->dev, old_count + cs35l41_conf_count,
+					sizeof(struct snd_soc_codec_conf),
+					GFP_KERNEL);
+		if (!new_conf) {
+			ret = -ENOMEM;
+			goto err;
+		}
+		memcpy(new_conf, msm_codec_conf,
+		       old_count * sizeof(struct snd_soc_codec_conf));
+		for (j = 0; j < cs35l41_conf_count; j++) {
+			new_conf[old_count + j].dev_name = cs35l41_names[j];
+			new_conf[old_count + j].name_prefix = cs35l41_prefixes[j];
+		}
+		card->num_configs += cs35l41_conf_count;
+		card->codec_conf = new_conf;
+	}
 err:
 	return ret;
 }
