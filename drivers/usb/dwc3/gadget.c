@@ -2543,6 +2543,8 @@ static int dwc3_gadget_pullup(struct usb_gadget *g, int is_on)
 		ret = dwc3_device_core_soft_reset(dwc);
 		if (ret != 0)
 			goto done;
+		/* soft-reset clears GCTL.PRTCAP; restore to device */
+		dwc3_set_prtcap(dwc, DWC3_GCTL_PRTCAP_DEVICE);
 	}
 
 	spin_lock_irqsave(&dwc->lock, flags);
