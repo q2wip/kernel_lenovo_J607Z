@@ -3113,6 +3113,8 @@ void dwc3_msm_vbus_notify(bool present)
 		present, mdwc->vbus_active);
 
 	if (present && !mdwc->vbus_active) {
+		/* Peripheral cable inserted */
+		mdwc->id_state = DWC3_ID_FLOAT;
 		mdwc->vbus_active = true;
 		dwc3_ext_event_notify(mdwc);
 		queue_delayed_work(mdwc->sm_usb_wq, &mdwc->sm_work, 0);
@@ -3123,6 +3125,37 @@ void dwc3_msm_vbus_notify(bool present)
 	}
 }
 EXPORT_SYMBOL(dwc3_msm_vbus_notify);
+
+/**
+ * dwc3_msm_typec_notify - called by PMIC charger driver on Type-C role change
+ * @typec_mode: POWER_SUPPLY_TYPEC_* value indicating attached device type
+ *
+ * Sink attached → we are source (host mode), Source attached → peripheral.
+ */
+void dwc3_msm_typec_notify(int typec_mode)
+{
+	struct dwc3_msm *mdwc = dwc3_msm_vbus_mdwc;
+	struct dwc3 *dwc;
+
+	if (!mdwc)
+		return;
+	dwc = platform_get_drvdata(mdwc->dwc3);
+	if (!dwc || !dwc3_is_otg_or_drd(dwc))
+		return;
+
+	dev_err(mdwc->dev, "DIAG: TYPEC notify mode=%d\n", typec_mode);
+
+	if (typec_mode >= POWER_SUPPLY_TYPEC_SINK &&
+	    typec_mode <= POWER_SUPPLY_TYPEC_SINK_AUDIO_ADAPTER) {
+		/* Sink attached → we are host */
+		if (mdwc->id_state == DWC3_ID_FLOAT) {
+			mdwc->id_state = DWC3_ID_GROUND;
+			dwc3_ext_event_notify(mdwc);
+			queue_delayed_work(mdwc->sm_usb_wq, &mdwc->sm_work, 0);
+		}
+	}
+}
+EXPORT_SYMBOL(dwc3_msm_typec_notify);
 
 static void dwc3_pwr_event_handler(struct dwc3_msm *mdwc)
 {

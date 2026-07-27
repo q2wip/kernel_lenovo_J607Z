@@ -6825,6 +6825,10 @@ irqreturn_t typec_state_change_irq_handler(int irq, void *data)
 
 	power_supply_changed(chg->usb_psy);
 
+	/* Notify DWC3 MSM driver of Type-C role change (OTG detection) */
+	extern void dwc3_msm_typec_notify(int typec_mode);
+	dwc3_msm_typec_notify(typec_mode);
+
 	return IRQ_HANDLED;
 }
 
