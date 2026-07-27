@@ -4847,20 +4847,6 @@ static void dwc3_otg_sm_work(struct work_struct *w)
 		break;
 
 	case DRD_STATE_PERIPHERAL:
-		/*
-		 * Cross-check PSY PRESENT — extcon chain may be stale
-		 * and the PSY atomic notifier may not fire in time.
-		 */
-		if (test_bit(B_SESS_VLD, &mdwc->inputs) && mdwc->usb_psy) {
-			union power_supply_propval pval = {0};
-			power_supply_get_property(mdwc->usb_psy,
-				POWER_SUPPLY_PROP_PRESENT, &pval);
-			if (!pval.intval) {
-				dev_err(mdwc->dev,
-					"DIAG: PSY PRESENT=0 while B_SESS_VLD, force disconnect\n");
-				clear_bit(B_SESS_VLD, &mdwc->inputs);
-			}
-		}
 		if (!test_bit(B_SESS_VLD, &mdwc->inputs) ||
 				!test_bit(ID, &mdwc->inputs)) {
 			dev_dbg(mdwc->dev, "!id || !bsv\n");
@@ -4876,12 +4862,7 @@ static void dwc3_otg_sm_work(struct work_struct *w)
 			dbg_event(0xFF, "!BSV psync",
 				atomic_read(&mdwc->dev->power.usage_count));
 			work = 1;
-		} else {
-		/* Poll PSY PRESENT every 2s while peripheral mode */
-		queue_delayed_work(mdwc->sm_usb_wq, &mdwc->sm_work,
-				msecs_to_jiffies(2000));
-	}
-	if (test_bit(B_SUSPEND, &mdwc->inputs) &&
+		} else if (test_bit(B_SUSPEND, &mdwc->inputs) &&
 			test_bit(B_SESS_VLD, &mdwc->inputs)) {
 			dev_dbg(mdwc->dev, "BPER bsv && susp\n");
 			mdwc->drd_state = DRD_STATE_PERIPHERAL_SUSPEND;
