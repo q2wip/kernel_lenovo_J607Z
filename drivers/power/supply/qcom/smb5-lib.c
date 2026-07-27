@@ -5939,6 +5939,10 @@ void smblib_usb_plugin_locked(struct smb_charger *chg)
 	power_supply_changed(chg->usb_psy);
 	smblib_dbg(chg, PR_INTERRUPT, "IRQ: usbin-plugin %s\n",
 					vbus_rising ? "attached" : "detached");
+
+	/* Notify DWC3 MSM driver of VBUS change (bypasses unreliable atomic notifier) */
+	extern void dwc3_msm_vbus_notify(bool present);
+	dwc3_msm_vbus_notify(vbus_rising);
 }
 
 irqreturn_t usb_plugin_irq_handler(int irq, void *data)
