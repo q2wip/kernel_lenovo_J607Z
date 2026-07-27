@@ -2540,6 +2540,12 @@ static int dwc3_gadget_pullup(struct usb_gadget *g, int is_on)
 	flush_work(&dwc->bh_work);
 
 	if (is_on) {
+		/*
+		 * Halt controller cleanly before soft-reset to avoid
+		 * residual state from previous SM-initiated peripheral
+		 * start. Matches the pullup(0) sequence.
+		 */
+		dwc3_gadget_run_stop(dwc, false, false);
 		ret = dwc3_device_core_soft_reset(dwc);
 		if (ret != 0)
 			goto done;
