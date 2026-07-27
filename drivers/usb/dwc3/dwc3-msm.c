@@ -4147,16 +4147,19 @@ static int dwc3_msm_probe(struct platform_device *pdev)
 			if (mdwc->usb_psy) {
 				power_supply_get_property(mdwc->usb_psy,
 					POWER_SUPPLY_PROP_PRESENT, &pval);
-				if (pval.intval && !mdwc->vbus_active) {
+				if (pval.intval) {
 					mdwc->vbus_active = true;
 					dev_err(mdwc->dev,
 						"DIAG: vbus from PSY PRESENT=1\n");
+				} else {
+					mdwc->vbus_active = false;
+					dev_err(mdwc->dev,
+						"DIAG: PSY PRESENT=0 at probe, wait for plug\n");
 				}
-			}
-			if (!mdwc->vbus_active) {
+			} else {
 				mdwc->vbus_active = true;
 				dev_err(mdwc->dev,
-					"DIAG: no extcon/PSY VBUS, force for DRD\n");
+					"DIAG: no PSY device, force for DRD\n");
 			}
 
 			mdwc->psy_nb.notifier_call = dwc3_msm_psy_notifier;
