@@ -22,6 +22,7 @@ static int wcd937x_slave_bind(struct device *dev,
 	struct wcd937x_slave_priv *wcd937x_slave = NULL;
 	uint8_t devnum = 0;
 	struct swr_device *pdev = to_swr_device(dev);
+	int retry = 10;
 
 	if (pdev == NULL) {
 		dev_err(dev, "%s: pdev is NULL\n", __func__);
@@ -37,17 +38,26 @@ static int wcd937x_slave_bind(struct device *dev,
 
 	wcd937x_slave->swr_slave = pdev;
 
-	ret = swr_get_logical_dev_num(pdev, pdev->addr, &devnum);
+	do {
+		ret = swr_get_logical_dev_num(pdev, pdev->addr, &devnum);
+		if (!ret)
+			break;
+		/* SWR master enumeration may not have completed yet;
+		 * retry with 50ms intervals for up to 500ms.
+		 */
+		msleep(50);
+	} while (--retry);
+
 	if (ret) {
-		dev_dbg(&pdev->dev,
-				"%s get devnum %d for dev addr %lx failed\n",
-				__func__, devnum, pdev->addr);
+		dev_err(&pdev->dev,
+			"%s get devnum for dev addr %lx failed after retries\n",
+			__func__, pdev->addr);
 		swr_remove_device(pdev);
 		return ret;
 	}
 	pdev->dev_num = devnum;
 
-	return ret;
+	return 0;
 }
 
 static void wcd937x_slave_unbind(struct device *dev,
