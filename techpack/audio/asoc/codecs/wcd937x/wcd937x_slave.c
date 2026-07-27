@@ -9,6 +9,7 @@
 #include <linux/device.h>
 #include <linux/kernel.h>
 #include <linux/component.h>
+#include <linux/delay.h>
 #include <soc/soundwire.h>
 
 struct wcd937x_slave_priv {
