@@ -3344,3 +3344,4 @@ module_platform_driver(tx_macro_driver);
 
 MODULE_DESCRIPTION("TX macro driver");
 MODULE_LICENSE("GPL v2");
+MODULE_SOFTDEP("pre: va_macro_dlkm");
