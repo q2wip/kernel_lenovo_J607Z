@@ -3197,6 +3197,7 @@ static irqreturn_t msm_dwc3_pwr_irq(int irq, void *data)
 }
 
 static void dwc3_otg_sm_work(struct work_struct *w);
+static int dwc3_otg_start_peripheral(struct dwc3_msm *mdwc, int on);
 static int get_psy_type(struct dwc3_msm *mdwc);
 
 static int dwc3_msm_get_clk_gdsc(struct dwc3_msm *mdwc)
@@ -3447,18 +3448,24 @@ static int dwc3_msm_psy_notifier(struct notifier_block *nb,
 
 	power_supply_get_property(psy, POWER_SUPPLY_PROP_PRESENT, &val);
 
+	dev_err(mdwc->dev,
+		"DIAG: PSY PRESENT=%d vbus_active=%d drd_state=%d\n",
+		val.intval, mdwc->vbus_active, mdwc->drd_state);
+
 	if (val.intval && !mdwc->vbus_active) {
-		dev_err(mdwc->dev,
-			"DIAG: PSY PRESENT=1, vbus_active=true\n");
 		mdwc->vbus_active = true;
 		dwc3_ext_event_notify(mdwc);
 		queue_delayed_work(mdwc->sm_usb_wq, &mdwc->sm_work, 0);
 	} else if (!val.intval && mdwc->vbus_active) {
-		dev_err(mdwc->dev,
-			"DIAG: PSY PRESENT=0, vbus_active=false\n");
 		mdwc->vbus_active = false;
 		dwc3_ext_event_notify(mdwc);
 		queue_delayed_work(mdwc->sm_usb_wq, &mdwc->sm_work, 0);
+	} else if (val.intval && mdwc->vbus_active &&
+			mdwc->drd_state == DRD_STATE_PERIPHERAL) {
+		mdwc->drd_state = DRD_STATE_IDLE;
+		dwc3_otg_start_peripheral(mdwc, 0);
+		mdwc->vbus_active = true;
+		dwc3_ext_event_notify(mdwc);
 	}
 
 	return NOTIFY_OK;
