@@ -311,6 +311,7 @@ struct dwc3_msm {
 	u32			bus_perf_client;
 	struct msm_bus_scale_pdata	*bus_scale_table;
 	struct power_supply	*usb_psy;
+	struct notifier_block	psy_nb;
 	struct work_struct	vbus_draw_work;
 	bool			in_host_mode;
 	bool			in_device_mode;
@@ -3426,6 +3427,43 @@ static int dwc3_msm_vbus_notifier(struct notifier_block *nb,
 	return NOTIFY_DONE;
 }
 
+static int dwc3_msm_psy_notifier(struct notifier_block *nb,
+				unsigned long event, void *ptr)
+{
+	struct dwc3_msm *mdwc = container_of(nb, struct dwc3_msm, psy_nb);
+	struct power_supply *psy = ptr;
+	union power_supply_propval val = {0};
+	struct dwc3 *dwc;
+
+	if (event != PSY_EVENT_PROP_CHANGED)
+		return NOTIFY_DONE;
+
+	dwc = platform_get_drvdata(mdwc->dwc3);
+	if (!dwc || !dwc3_is_otg_or_drd(dwc))
+		return NOTIFY_DONE;
+
+	if (strcmp(psy->desc->name, "usb") != 0)
+		return NOTIFY_DONE;
+
+	power_supply_get_property(psy, POWER_SUPPLY_PROP_PRESENT, &val);
+
+	if (val.intval && !mdwc->vbus_active) {
+		dev_err(mdwc->dev,
+			"DIAG: PSY PRESENT=1, vbus_active=true\n");
+		mdwc->vbus_active = true;
+		dwc3_ext_event_notify(mdwc);
+		queue_delayed_work(mdwc->sm_usb_wq, &mdwc->sm_work, 0);
+	} else if (!val.intval && mdwc->vbus_active) {
+		dev_err(mdwc->dev,
+			"DIAG: PSY PRESENT=0, vbus_active=false\n");
+		mdwc->vbus_active = false;
+		dwc3_ext_event_notify(mdwc);
+		queue_delayed_work(mdwc->sm_usb_wq, &mdwc->sm_work, 0);
+	}
+
+	return NOTIFY_OK;
+}
+
 static int dwc3_msm_extcon_register(struct dwc3_msm *mdwc)
 {
 	struct device_node *node = mdwc->dev->of_node;
@@ -4092,14 +4130,30 @@ static int dwc3_msm_probe(struct platform_device *pdev)
 					&mdwc->dpdm_nb);
 		}
 
-		/* Always sync VBUS state and kick OTG SM so gadget can
-		 * start.  Without this, dwc->vbus_active stays false and
-		 * dwc3_gadget_pullup skips the pullup.
-		 */
-		if (dwc3_is_otg_or_drd(dwc) && !mdwc->vbus_active) {
-			mdwc->vbus_active = true;
-			dev_err(mdwc->dev,
-				"DIAG: force vbus_active=true for DRD\n");
+		if (dwc3_is_otg_or_drd(dwc)) {
+			union power_supply_propval pval = {0};
+
+			if (!mdwc->usb_psy) {
+				mdwc->usb_psy =
+					power_supply_get_by_name("usb");
+			}
+			if (mdwc->usb_psy) {
+				power_supply_get_property(mdwc->usb_psy,
+					POWER_SUPPLY_PROP_PRESENT, &pval);
+				if (pval.intval && !mdwc->vbus_active) {
+					mdwc->vbus_active = true;
+					dev_err(mdwc->dev,
+						"DIAG: vbus from PSY PRESENT=1\n");
+				}
+			}
+			if (!mdwc->vbus_active) {
+				mdwc->vbus_active = true;
+				dev_err(mdwc->dev,
+					"DIAG: no extcon/PSY VBUS, force for DRD\n");
+			}
+
+			mdwc->psy_nb.notifier_call = dwc3_msm_psy_notifier;
+			power_supply_reg_notifier(&mdwc->psy_nb);
 		}
 		dwc3_ext_event_notify(mdwc);
 		queue_delayed_work(mdwc->sm_usb_wq, &mdwc->sm_work, 0);
@@ -4168,6 +4222,11 @@ static int dwc3_msm_remove(struct platform_device *pdev)
 	if (mdwc->dpdm_nb.notifier_call) {
 		regulator_unregister_notifier(mdwc->dpdm_reg, &mdwc->dpdm_nb);
 		mdwc->dpdm_nb.notifier_call = NULL;
+	}
+
+	if (mdwc->psy_nb.notifier_call) {
+		power_supply_unreg_notifier(&mdwc->psy_nb);
+		mdwc->psy_nb.notifier_call = NULL;
 	}
 
 	if (mdwc->usb_psy)
