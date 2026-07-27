@@ -244,6 +244,8 @@ static const char * const gsi_op_strings[] = {
 
 struct dwc3_msm;
 
+static struct dwc3_msm *dwc3_msm_vbus_mdwc;
+
 struct extcon_nb {
 	struct extcon_dev	*edev;
 	struct dwc3_msm		*mdwc;
@@ -3092,6 +3094,36 @@ skip_update:
 	dwc3_ext_event_notify(mdwc);
 }
 
+/**
+ * dwc3_msm_vbus_notify - called by PMIC charger driver on VBUS events
+ * @present: true = VBUS present (cable inserted), false = removed
+ */
+void dwc3_msm_vbus_notify(bool present)
+{
+	struct dwc3_msm *mdwc = dwc3_msm_vbus_mdwc;
+	struct dwc3 *dwc;
+
+	if (!mdwc)
+		return;
+	dwc = platform_get_drvdata(mdwc->dwc3);
+	if (!dwc || !dwc3_is_otg_or_drd(dwc))
+		return;
+
+	dev_err(mdwc->dev, "DIAG: VBUS notify present=%d (was %d)\n",
+		present, mdwc->vbus_active);
+
+	if (present && !mdwc->vbus_active) {
+		mdwc->vbus_active = true;
+		dwc3_ext_event_notify(mdwc);
+		queue_delayed_work(mdwc->sm_usb_wq, &mdwc->sm_work, 0);
+	} else if (!present && mdwc->vbus_active) {
+		mdwc->vbus_active = false;
+		dwc3_ext_event_notify(mdwc);
+		queue_delayed_work(mdwc->sm_usb_wq, &mdwc->sm_work, 0);
+	}
+}
+EXPORT_SYMBOL(dwc3_msm_vbus_notify);
+
 static void dwc3_pwr_event_handler(struct dwc3_msm *mdwc)
 {
 	struct dwc3 *dwc = platform_get_drvdata(mdwc->dwc3);
@@ -3808,6 +3840,7 @@ static int dwc3_msm_probe(struct platform_device *pdev)
 	mdwc = devm_kzalloc(&pdev->dev, sizeof(*mdwc), GFP_KERNEL);
 	if (!mdwc)
 		return -ENOMEM;
+	dwc3_msm_vbus_mdwc = mdwc;
 
 	platform_set_drvdata(pdev, mdwc);
 	mdwc->dev = &pdev->dev;
