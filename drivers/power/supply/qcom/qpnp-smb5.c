@@ -347,6 +347,7 @@ static int smb5_chg_config_init(struct smb5 *chip)
 		chg->name = "pm7250b_charger";
 		chg->wa_flags |= CHG_TERMINATION_WA;
 		chg->uusb_moisture_protection_capable = true;
+		chg->use_extcon = true;
 		break;
 	case PM6150_SUBTYPE:
 		chip->chg.chg_param.smb_version = PM6150_SUBTYPE;
