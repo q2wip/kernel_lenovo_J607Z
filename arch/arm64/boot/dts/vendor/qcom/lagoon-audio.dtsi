@@ -178,3 +178,113 @@
 		pinctrl-0 = <&fsa_usbc_ana_en>;
 	};
 };
+
+/* WCD938x codec + slaves — baked into base DTB so the bootloader's
+ * dtbo_idx=2 selection does not block audio.  WCD937x remains disabled.
+ */
+&swr1 {
+	wcd938x_rx_slave: wcd938x-rx-slave {
+		status = "ok";
+		compatible = "qcom,wcd938x-slave";
+		reg = <0x0D 0x01170224>;
+	};
+	wcd937x_rx_slave: wcd937x_rx_slave {
+		status = "disabled";
+		compatible = "qcom,wcd937x-slave";
+		reg = <0x0A 0x01170224>;
+	};
+};
+
+&swr2 {
+	wcd938x_tx_slave: wcd938x-tx-slave {
+		status = "ok";
+		compatible = "qcom,wcd938x-slave";
+		reg = <0x0D 0x01170223>;
+	};
+	wcd937x_tx_slave: wcd937x-tx-slave {
+		status = "disabled";
+		compatible = "qcom,wcd937x-slave";
+		reg = <0x0A 0x01170223>;
+	};
+};
+
+&bolero {
+	wcd938x_codec: wcd938x-codec {
+		status = "ok";
+		compatible = "qcom,wcd938x-codec";
+		qcom,split-codec = <1>;
+		qcom,rx_swr_ch_map = <0 HPH_L 0x1 0 HPH_L>,
+			<0 HPH_R 0x2 0 HPH_R>, <1 CLSH 0x1 0 CLSH>,
+			<2 COMP_L 0x1 0 COMP_L>, <2 COMP_R 0x2 0 COMP_R>,
+			<3 LO 0x1 0 LO>, <4 DSD_L 0x1 0 DSD_L>,
+			<4 DSD_R 0x2 0 DSD_R>;
+		qcom,tx_swr_ch_map = <0 ADC1 0x1 0 SWR_MIC0>,
+			<0 ADC2 0x2 0 SWR_MIC1>,
+			<0 ADC3 0x4 0 SWR_MIC2>,
+			<0 ADC4 0x8 0 SWR_MIC3>,
+			<0 DMIC0 0x10 0 SWR_MIC0>,
+			<0 DMIC1 0x20 0 SWR_MIC1>,
+			<0 DMIC2 0x40 0 SWR_MIC2>,
+			<0 DMIC3 0x80 0 SWR_MIC3>,
+			<0 MBHC 0x100 0 SWR_MIC4>,
+			<1 DMIC4 0x20 0 SWR_MIC4>,
+			<1 DMIC5 0x40 0 SWR_MIC5>,
+			<1 DMIC6 0x80 0 SWR_MIC6>,
+			<1 DMIC7 0x100 0 SWR_MIC7>;
+		qcom,wcd-rst-gpio-node = <&wcd938x_rst_gpio>;
+		qcom,rx-slave = <&wcd938x_rx_slave>;
+		qcom,tx-slave = <&wcd938x_tx_slave>;
+		cdc-vdd-rxtx-supply = <&L11A>;
+		cdc-vddio-supply = <&L14A>;
+		cdc-vdd-buck-supply = <&S4A>;
+		cdc-vdd-mic-bias-supply = <&S4A>;
+		qcom,cdc-vdd-rxtx-voltage = <1800000 1800000>;
+		qcom,cdc-vddio-voltage = <1800000 1800000>;
+		qcom,cdc-vdd-buck-voltage = <1800000 1800000>;
+		qcom,cdc-vdd-mic-bias-voltage = <3300000 3300000>;
+		qcom,cdc-micbias1-mv = <2700>;
+		qcom,cdc-micbias2-mv = <2700>;
+		qcom,cdc-micbias3-mv = <2700>;
+		qcom,cdc-micbias4-mv = <2700>;
+		qcom,cdc-on-demand-supplies = "cdc-vdd-buck";
+	};
+
+	wcd937x_codec: wcd937x-codec {
+		status = "disabled";
+		compatible = "qcom,wcd937x-codec";
+		qcom,split-codec = <1>;
+		qcom,rx_swr_ch_map = <0 HPH_L 0x1 0 HPH_L>,
+			<0 HPH_R 0x2 0 HPH_R>, <1 CLSH 0x1 0 CLSH>,
+			<2 COMP_L 0x1 0 COMP_L>, <2 COMP_R 0x2 0 COMP_R>,
+			<3 LO 0x1 0 LO>, <4 DSD_L 0x1 0 DSD_L>,
+			<4 DSD_R 0x2 0 DSD_R>;
+		qcom,tx_swr_ch_map = <0 ADC1 0x1 0 SWR_MIC0>,
+			<0 ADC2 0x2 0 SWR_MIC1>,
+			<1 ADC3 0x1 0 SWR_MIC2>,
+			<1 ADC4 0x2 0 SWR_MIC3>,
+			<0 DMIC0 0x10 0 SWR_MIC0>,
+			<0 DMIC1 0x20 0 SWR_MIC1>,
+			<1 DMIC2 0x1 0 SWR_MIC2>,
+			<1 DMIC3 0x2 0 SWR_MIC3>,
+			<0 MBHC 0x100 0 SWR_MIC4>,
+			<1 DMIC4 0x20 0 SWR_MIC4>,
+			<1 DMIC5 0x40 0 SWR_MIC5>,
+			<1 DMIC6 0x80 0 SWR_MIC6>,
+			<1 DMIC7 0x100 0 SWR_MIC7>;
+		qcom,wcd-rst-gpio-node = <&wcd938x_rst_gpio>;
+		qcom,rx-slave = <&wcd937x_rx_slave>;
+		qcom,tx-slave = <&wcd937x_tx_slave>;
+		cdc-vdd-rxtx-supply = <&L11A>;
+		cdc-vddio-supply = <&L14A>;
+		cdc-vdd-buck-supply = <&S4A>;
+		cdc-vdd-mic-bias-supply = <&S4A>;
+		qcom,cdc-vdd-rxtx-voltage = <1800000 1800000>;
+		qcom,cdc-vddio-voltage = <1800000 1800000>;
+		qcom,cdc-vdd-buck-voltage = <1800000 1800000>;
+		qcom,cdc-vdd-mic-bias-voltage = <3300000 3300000>;
+		qcom,cdc-micbias1-mv = <1800>;
+		qcom,cdc-micbias2-mv = <1800>;
+		qcom,cdc-micbias3-mv = <1800>;
+		qcom,cdc-on-demand-supplies = "cdc-vdd-buck";
+	};
+};
