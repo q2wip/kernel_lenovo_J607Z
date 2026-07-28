@@ -5940,9 +5940,6 @@ void smblib_usb_plugin_locked(struct smb_charger *chg)
 	smblib_dbg(chg, PR_INTERRUPT, "IRQ: usbin-plugin %s\n",
 					vbus_rising ? "attached" : "detached");
 
-	/* Notify DWC3 MSM driver of VBUS change (bypasses unreliable atomic notifier) */
-	extern void dwc3_msm_vbus_notify(bool present);
-	dwc3_msm_vbus_notify(vbus_rising);
 }
 
 irqreturn_t usb_plugin_irq_handler(int irq, void *data)
@@ -6824,10 +6821,6 @@ irqreturn_t typec_state_change_irq_handler(int irq, void *data)
 				smblib_typec_mode_name[chg->typec_mode]);
 
 	power_supply_changed(chg->usb_psy);
-
-	/* Notify DWC3 MSM driver of Type-C role change (OTG detection) */
-	extern void dwc3_msm_typec_notify(int typec_mode);
-	dwc3_msm_typec_notify(typec_mode);
 
 	return IRQ_HANDLED;
 }
