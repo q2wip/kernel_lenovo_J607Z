@@ -3100,9 +3100,11 @@ skip_update:
  */
 void dwc3_msm_vbus_notify(bool present)
 {
-	struct dwc3_msm *mdwc = dwc3_msm_vbus_mdwc;
+	struct dwc3_msm *mdwc;
 	struct dwc3 *dwc;
 
+	barrier();
+	mdwc = READ_ONCE(dwc3_msm_vbus_mdwc);
 	if (!mdwc)
 		return;
 	dwc = platform_get_drvdata(mdwc->dwc3);
@@ -3134,9 +3136,11 @@ EXPORT_SYMBOL(dwc3_msm_vbus_notify);
  */
 void dwc3_msm_typec_notify(int typec_mode)
 {
-	struct dwc3_msm *mdwc = dwc3_msm_vbus_mdwc;
+	struct dwc3_msm *mdwc;
 	struct dwc3 *dwc;
 
+	barrier();
+	mdwc = READ_ONCE(dwc3_msm_vbus_mdwc);
 	if (!mdwc)
 		return;
 	dwc = platform_get_drvdata(mdwc->dwc3);
