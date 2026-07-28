@@ -397,9 +397,9 @@
 };
 
 /*
- * Audio: J607F (arnoz) has no WSA speakers, uses WCD937x codec + CS35L41 amps.
- * Override lagoon-audio-overlay.dtsi defaults to prevent machine driver
- * from waiting indefinitely for non-existent WSA883x components.
+ * Audio: J607F (arnoz) has no WSA speakers, uses WCD938x codec + CS35L41 amps.
+ * Stock PE kernel targets WCD938x — confirmed by ref-PE-J607F DTS and
+ * SWR enumeration failure at WCD937x address 0x0A.
  *
  * MI2S is disabled because the CS35L41 I2C nodes are not yet present
  * in arnoz DTS. Without this, kona.c unconditionally adds CS35L41 DAI
@@ -411,22 +411,20 @@
 	/delete-property/ qcom,wsa-aux-dev-prefix;
 
 	qcom,codec-max-aux-devs = <0>;
-	qcom,codec-aux-devs = <&wcd937x_codec>;
+	qcom,codec-aux-devs = <&wcd938x_codec>;
 
 	qcom,mi2s-audio-intf = <0>;
 };
 
-&wcd937x_tx_slave {
-	status = "ok";
-};
+/* WCD938x — stock J607F codec (confirmed by ref-PE-J607F) */
+&wcd938x_tx_slave { status = "ok"; };
+&wcd938x_rx_slave { status = "ok"; };
+&wcd938x_codec    { status = "ok"; };
 
-&wcd937x_rx_slave {
-	status = "ok";
-};
-
-&wcd937x_codec {
-	status = "ok";
-};
+/* WCD937x — alternative codec, not present on J607F HW */
+&wcd937x_tx_slave { status = "disabled"; };
+&wcd937x_rx_slave { status = "disabled"; };
+&wcd937x_codec    { status = "disabled"; };
 
 /* Camera: OV13B10 rear camera on CCI0 */
 #include "arnoz-camera-sensor.dtsi"
