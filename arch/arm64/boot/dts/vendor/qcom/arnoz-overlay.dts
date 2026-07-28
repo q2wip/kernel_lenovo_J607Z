@@ -53,14 +53,16 @@
 // silently dropped, causing the SWR master to default to v1.6 (0x01060000)
 // while actual HW is v1.5.1 — slave enumeration fails with "device not ready".
 // Restore the property via DTBO overlay (compiled with system DTC 1.7.2).
-&swr0 {
+// Using full-path target syntax because label references (&swr0..2) may not
+// resolve correctly in /plugin/ overlays across deeply nested includes.
+&{/soc/qcom,msm-audio-apr/qcom,q6core-audio/bolero-cdc/wsa-macro@3240000/wsa_swr_master} {
 	qcom,swr-master-version = <0x01050001>;
 };
 
-&swr1 {
+&{/soc/qcom,msm-audio-apr/qcom,q6core-audio/bolero-cdc/rx-macro@3200000/rx_swr_master} {
 	qcom,swr-master-version = <0x01050001>;
 };
 
-&swr2 {
+&{/soc/qcom,msm-audio-apr/qcom,q6core-audio/bolero-cdc/tx-macro@3220000/tx_swr_master} {
 	qcom,swr-master-version = <0x01050001>;
 };
