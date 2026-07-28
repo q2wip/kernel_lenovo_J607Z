@@ -3771,6 +3771,7 @@
 #include "lagoon-ion.dtsi"
 #include "lagoon-qupv3.dtsi"
 #include "lagoon-audio.dtsi"
+#include "lagoon-audio-overlay.dtsi"
 #include "ipcc-test-lagoon.dtsi"
 #include "lagoon-vidc.dtsi"
 
