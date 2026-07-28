@@ -401,12 +401,13 @@
  * Stock PE kernel targets WCD938x — confirmed by ref-PE-J607F DTS and
  * SWR enumeration failure at WCD937x address 0x0A.
  *
+ * Codec defaults in lagoon-audio-overlay.dtsi:
+ *   WCD938x slaves + codec: status = "ok" (enabled)
+ *   WCD937x slaves + codec: status = "disabled"
+ *
  * MI2S is disabled because the CS35L41 I2C nodes are not yet present
  * in arnoz DTS. Without this, kona.c unconditionally adds CS35L41 DAI
  * links and snd_soc_register_card defers forever waiting for them.
- *
- * NOTE: deeply nested label references (&wcd938x_tx_slave etc.) may not
- * resolve in /plugin/ DTBO context.  Use full-path target syntax instead.
  */
 &lagoon_snd {
 	qcom,wsa-max-devs = <0>;
@@ -418,16 +419,6 @@
 
 	qcom,mi2s-audio-intf = <0>;
 };
-
-/* WCD938x — stock J607F codec (confirmed by ref-PE-J607F) */
-&{/soc/qcom,msm-audio-apr/qcom,q6core-audio/bolero-cdc/wcd938x-codec} { status = "ok"; };
-&{/soc/qcom,msm-audio-apr/qcom,q6core-audio/bolero-cdc/tx-macro@3220000/tx_swr_master/wcd938x-tx-slave} { status = "ok"; };
-&{/soc/qcom,msm-audio-apr/qcom,q6core-audio/bolero-cdc/rx-macro@3200000/rx_swr_master/wcd938x-rx-slave} { status = "ok"; };
-
-/* WCD937x — alternative codec, not present on J607F HW */
-&{/soc/qcom,msm-audio-apr/qcom,q6core-audio/bolero-cdc/wcd937x-codec} { status = "disabled"; };
-&{/soc/qcom,msm-audio-apr/qcom,q6core-audio/bolero-cdc/tx-macro@3220000/tx_swr_master/wcd937x-tx-slave} { status = "disabled"; };
-&{/soc/qcom,msm-audio-apr/qcom,q6core-audio/bolero-cdc/rx-macro@3200000/rx_swr_master/wcd937x_rx_slave} { status = "disabled"; };
 
 /* Camera: OV13B10 rear camera on CCI0 */
 #include "arnoz-camera-sensor.dtsi"
