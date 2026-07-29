@@ -397,27 +397,29 @@
 };
 
 /*
- * Audio: J607F (arnoz) has no WSA speakers, uses WCD938x codec + CS35L41 amps.
- * Stock PE kernel targets WCD938x — confirmed by ref-PE-J607F DTS and
- * SWR enumeration failure at WCD937x address 0x0A.
+ * Audio: J607F (arnoz) has no WSA speakers — uses WCD938x codec +
+ * 4x CS35L41 Cirrus Logic smart amps on TERT_MI2S_RX backend.
  *
- * Codec defaults in lagoon-audio-overlay.dtsi:
- *   WCD938x slaves + codec: status = "ok" (enabled)
- *   WCD937x slaves + codec: status = "disabled"
+ * WCD938x is enabled in lagoon-audio-overlay.dtsi (status="ok").
+ * WCD937x is disabled in lagoon-audio-overlay.dtsi (status="disabled").
+ * The 4 CS35L41 I2C nodes (0x40-0x43) live in lagoon.dts base DTB.
  *
- * MI2S is disabled because the CS35L41 I2C nodes are not yet present
- * in arnoz DTS. Without this, kona.c unconditionally adds CS35L41 DAI
- * links and snd_soc_register_card defers forever waiting for them.
+ * kona.c adds CS35L41 DAI links when mi2s-audio-intf = <1>:
+ *   tert_mi2s_rx_cs35l41_be_dai_links → TERT_MI2S_RX backend
+ *   (uses cs35l41_codec_components for 0x40/0x41 with SPK/RCV prefix)
+ *
+ * CONFIG_TARGET_SUPPORT_TDM is NOT defined for Lagoon/Lito so that
+ * the MI2S (not TDM) backend name matches mixer_paths references.
  */
 &lagoon_snd {
 	qcom,wsa-max-devs = <0>;
 	/delete-property/ qcom,wsa-devs;
 	/delete-property/ qcom,wsa-aux-dev-prefix;
 
-	qcom,codec-max-aux-devs = <0>;
+	qcom,codec-max-aux-devs = <1>;
 	qcom,codec-aux-devs = <&wcd938x_codec>;
 
-	qcom,mi2s-audio-intf = <0>;
+	qcom,mi2s-audio-intf = <1>;
 };
 
 /* Camera: OV13B10 rear camera on CCI0 */
