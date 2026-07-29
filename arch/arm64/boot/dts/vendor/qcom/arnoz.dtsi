@@ -1,5 +1,6 @@
 
 #include "arnoz-pinctrl.dtsi"
+#include "lagoon-audio-overlay.dtsi"
 #include "lagoon-thermal-overlay.dtsi"
 #include "lagoon-sde-display.dtsi"
 #include "dsi-panel-himax-boe-video.dtsi"
@@ -400,7 +401,9 @@
  * Stock PE kernel targets WCD938x — confirmed by ref-PE-J607F DTS and
  * SWR enumeration failure at WCD937x address 0x0A.
  *
- * WCD938x codec + slave nodes are defined in lagoon-audio.dtsi (base DTB).
+ * Codec defaults in lagoon-audio-overlay.dtsi:
+ *   WCD938x slaves + codec: status = "ok" (enabled)
+ *   WCD937x slaves + codec: status = "disabled"
  *
  * MI2S is disabled because the CS35L41 I2C nodes are not yet present
  * in arnoz DTS. Without this, kona.c unconditionally adds CS35L41 DAI
