@@ -182,6 +182,8 @@
 /* WCD938x codec + slaves — baked into base DTB so the bootloader's
  * dtbo_idx=2 selection does not block audio.  WCD937x remains disabled.
  */
+#include <dt-bindings/sound/audio-codec-port-types.h>
+
 &swr1 {
 	wcd938x_rx_slave: wcd938x-rx-slave {
 		status = "ok";
