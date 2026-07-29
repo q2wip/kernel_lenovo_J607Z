@@ -92,18 +92,16 @@
 
 //static atomic_t cs35l41_mclk_rsc_ref;
 
-#define CS35L41_SPEAKER_NAME "cs35l41.0-0040"
-#define CS35L41_RECEIVER_NAME "cs35l41.0-0041"
+#define CS35L41_SPEAKER_NAME "cs35l41.3-0040"
+#define CS35L41_RECEIVER_NAME "cs35l41.3-0041"
 struct snd_soc_dai_link_component cs35l41_codec_components[] = {
 	{
 		.name = CS35L41_SPEAKER_NAME,
-		//.dai_name = "cs35l41-pcm",
-		.dai_name = CS35L41_SPEAKER_NAME,
+		.dai_name = "cs35l41-pcm",
 	},
 	{
 		.name = CS35L41_RECEIVER_NAME,
-		//.dai_name = "cs35l41-pcm",
-		.dai_name = CS35L41_RECEIVER_NAME,
+		.dai_name = "cs35l41-pcm",
 	},
 };
 

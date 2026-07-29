@@ -420,6 +420,7 @@
 	qcom,codec-aux-devs = <&wcd938x_codec>;
 
 	qcom,mi2s-audio-intf = <1>;
+	qcom,tdm-audio-intf = <0>;
 };
 
 /* Camera: OV13B10 rear camera on CCI0 */
