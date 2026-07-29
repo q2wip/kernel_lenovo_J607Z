@@ -220,19 +220,13 @@
 			<2 COMP_L 0x1 0 COMP_L>, <2 COMP_R 0x2 0 COMP_R>,
 			<3 LO 0x1 0 LO>, <4 DSD_L 0x1 0 DSD_L>,
 			<4 DSD_R 0x2 0 DSD_R>;
-		qcom,tx_swr_ch_map = <0 ADC1 0x1 0 SWR_MIC0>,
-			<0 ADC2 0x2 0 SWR_MIC1>,
-			<0 ADC3 0x4 0 SWR_MIC2>,
-			<0 ADC4 0x8 0 SWR_MIC3>,
-			<0 DMIC0 0x10 0 SWR_MIC0>,
-			<0 DMIC1 0x20 0 SWR_MIC1>,
-			<0 DMIC2 0x40 0 SWR_MIC2>,
-			<0 DMIC3 0x80 0 SWR_MIC3>,
-			<0 MBHC 0x100 0 SWR_MIC4>,
-			<1 DMIC4 0x20 0 SWR_MIC4>,
-			<1 DMIC5 0x40 0 SWR_MIC5>,
-			<1 DMIC6 0x80 0 SWR_MIC6>,
-			<1 DMIC7 0x100 0 SWR_MIC7>;
+		qcom,tx_swr_ch_map = <0 ADC1 0x1 0 ADC1>,
+			<0 ADC2 0x2 0 ADC2>, <1 ADC3 0x1 0 ADC3>,
+			<1 ADC4 0x2 0 ADC4>, <2 DMIC0 0x1 0 DMIC0>,
+			<2 DMIC1 0x2 0 DMIC1>, <2 MBHC 0x4 0 DMIC2>,
+			<2 DMIC2 0x4 0 DMIC2>, <2 DMIC3 0x8 0 DMIC3>,
+			<3 DMIC4 0x1 0 DMIC4>, <3 DMIC5 0x2 0 DMIC5>,
+			<3 DMIC6 0x4 0 DMIC6>, <3 DMIC7 0x8 0 DMIC7>;
 		qcom,wcd-rst-gpio-node = <&wcd938x_rst_gpio>;
 		qcom,rx-slave = <&wcd938x_rx_slave>;
 		qcom,tx-slave = <&wcd938x_tx_slave>;
@@ -260,19 +254,12 @@
 			<2 COMP_L 0x1 0 COMP_L>, <2 COMP_R 0x2 0 COMP_R>,
 			<3 LO 0x1 0 LO>, <4 DSD_L 0x1 0 DSD_L>,
 			<4 DSD_R 0x2 0 DSD_R>;
-		qcom,tx_swr_ch_map = <0 ADC1 0x1 0 SWR_MIC0>,
-			<0 ADC2 0x2 0 SWR_MIC1>,
-			<1 ADC3 0x1 0 SWR_MIC2>,
-			<1 ADC4 0x2 0 SWR_MIC3>,
-			<0 DMIC0 0x10 0 SWR_MIC0>,
-			<0 DMIC1 0x20 0 SWR_MIC1>,
-			<1 DMIC2 0x1 0 SWR_MIC2>,
-			<1 DMIC3 0x2 0 SWR_MIC3>,
-			<0 MBHC 0x100 0 SWR_MIC4>,
-			<1 DMIC4 0x20 0 SWR_MIC4>,
-			<1 DMIC5 0x40 0 SWR_MIC5>,
-			<1 DMIC6 0x80 0 SWR_MIC6>,
-			<1 DMIC7 0x100 0 SWR_MIC7>;
+		qcom,tx_swr_ch_map = <0 ADC1 0x1 0 ADC1>,
+			<1 ADC2 0x1 0 ADC3>, <1 ADC3 0x2 0 ADC4>,
+			<2 DMIC0 0x1 0 DMIC0>, <2 DMIC1 0x2 0 DMIC1>,
+			<2 MBHC 0x4 0 DMIC2>, <3 DMIC2 0x1 0 DMIC4>,
+			<3 DMIC3 0x2 0 DMIC5>, <3 DMIC4 0x4 0 DMIC6>,
+			<3 DMIC5 0x8 0 DMIC7>;
 		qcom,wcd-rst-gpio-node = <&wcd938x_rst_gpio>;
 		qcom,rx-slave = <&wcd937x_rx_slave>;
 		qcom,tx-slave = <&wcd937x_tx_slave>;
