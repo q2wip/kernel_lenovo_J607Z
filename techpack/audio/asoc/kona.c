@@ -90,7 +90,7 @@
 
 #define SWR_MAX_SLAVE_DEVICES 6
 
-//static atomic_t cs35l41_mclk_rsc_ref;
+static atomic_t cs35l41_mclk_rsc_ref;
 
 #define CS35L41_SPEAKER_NAME "cs35l41.3-0040"
 #define CS35L41_RECEIVER_NAME "cs35l41.3-0041"
@@ -5445,25 +5445,7 @@ static struct snd_soc_ops msm_mi2s_be_ops = {
 };
 
 /* use qcom default be ops */
-#if 0
-static int msm_hw_params_cs35l41_fixup(struct snd_soc_pcm_runtime *rtd,
-                                struct snd_pcm_hw_params *params)
-{
-	struct snd_interval *rate = hw_param_interval(params,
-		SNDRV_PCM_HW_PARAM_RATE);
-
-	struct snd_interval *channels = hw_param_interval(params,
-		SNDRV_PCM_HW_PARAM_CHANNELS);
-
-	param_set_mask(params, SNDRV_PCM_HW_PARAM_FORMAT, SNDRV_PCM_FORMAT_S16_LE);
-
-	pr_debug("%s()\n", __func__);
-	rate->min = rate->max = 48000;
-	channels->min = channels->max = 2;
-
-	return 0;
-}
-
+#if 1
 static int msm_mi2s_cs35l41_startup(struct snd_pcm_substream *substream)
 {
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
@@ -5532,37 +5514,21 @@ static struct snd_soc_ops msm_mi2s_cs35l41_be_ops = {
 
 static int cs35l41_init(struct snd_soc_pcm_runtime *rtd)
 {
-#if 0
 	struct snd_soc_card *card = rtd->card;
 	struct snd_soc_codec *spk_cdc = rtd->codec_dais[0]->codec;
 	struct snd_soc_dapm_context *spk_dapm = snd_soc_codec_get_dapm(spk_cdc);
-	struct snd_soc_codec *rcv_cdc = rtd->codec_dais[1]->codec;
-	struct snd_soc_dapm_context *rcv_dapm = snd_soc_codec_get_dapm(rcv_cdc);
 
 	dev_info(card->dev, "%s: found codec[%s]\n", __func__, dev_name(spk_cdc->dev));
-			snd_soc_dapm_ignore_suspend(spk_dapm, "AMP Playback");
-			snd_soc_dapm_ignore_suspend(spk_dapm, "AMP Capture");
-			snd_soc_dapm_ignore_suspend(spk_dapm, "DSP1");
-			snd_soc_dapm_ignore_suspend(spk_dapm, "Main AMP");
-			snd_soc_dapm_ignore_suspend(spk_dapm, "ASPRX1");
-			snd_soc_dapm_ignore_suspend(spk_dapm, "ASPRX2");
-			snd_soc_dapm_ignore_suspend(spk_dapm, "ASPTX1");
-			snd_soc_dapm_ignore_suspend(spk_dapm, "ASPTX2");
-			snd_soc_dapm_ignore_suspend(spk_dapm, "SPK");
+	snd_soc_dapm_ignore_suspend(spk_dapm, "AMP Playback");
+	snd_soc_dapm_ignore_suspend(spk_dapm, "AMP Capture");
+	snd_soc_dapm_ignore_suspend(spk_dapm, "DSP1");
+	snd_soc_dapm_ignore_suspend(spk_dapm, "Main AMP");
+	snd_soc_dapm_ignore_suspend(spk_dapm, "ASPRX1");
+	snd_soc_dapm_ignore_suspend(spk_dapm, "ASPRX2");
+	snd_soc_dapm_ignore_suspend(spk_dapm, "ASPTX1");
+	snd_soc_dapm_ignore_suspend(spk_dapm, "ASPTX2");
+	snd_soc_dapm_ignore_suspend(spk_dapm, "SPK");
 	snd_soc_dapm_sync(spk_dapm);
-
-	dev_info(card->dev, "%s: found codec[%s]\n", __func__, dev_name(rcv_cdc->dev));
-			snd_soc_dapm_ignore_suspend(rcv_dapm, "RCV AMP Playback");
-			snd_soc_dapm_ignore_suspend(rcv_dapm, "RCV AMP Capture");
-			snd_soc_dapm_ignore_suspend(rcv_dapm, "RCV DSP1");
-			snd_soc_dapm_ignore_suspend(rcv_dapm, "RCV Main AMP");
-			snd_soc_dapm_ignore_suspend(rcv_dapm, "RCV ASPRX1");
-			snd_soc_dapm_ignore_suspend(rcv_dapm, "RCV ASPRX2");
-			snd_soc_dapm_ignore_suspend(rcv_dapm, "RCV ASPTX1");
-			snd_soc_dapm_ignore_suspend(rcv_dapm, "RCV ASPTX2");
-			snd_soc_dapm_ignore_suspend(rcv_dapm, "RCV SPK");
-	snd_soc_dapm_sync(rcv_dapm);
-#endif
 	return 0;
 }
 
@@ -7286,14 +7252,15 @@ static struct snd_soc_dai_link tert_mi2s_rx_cs35l41_be_dai_links[] = {
 		.name = LPASS_BE_TERT_MI2S_RX,
 		.stream_name = "Tertiary MI2S Playback",
 		.cpu_dai_name = "msm-dai-q6-mi2s.2",
-		.platform_name = "msm-pcm-routing",
+		.platform_name = "msm-pcm-hostless",
 		.codecs = cs35l41_codec_components,
 		.num_codecs = ARRAY_SIZE(cs35l41_codec_components),
 		.no_pcm = 1,
 		.dpcm_playback = 1,
 		.id = MSM_BACKEND_DAI_TERTIARY_MI2S_RX,
 		.be_hw_params_fixup = msm_be_hw_params_fixup,
-		.ops = &msm_mi2s_be_ops,
+		.ops = &msm_mi2s_cs35l41_be_ops,
+		.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
 		.ignore_suspend = 1,
 		.ignore_pmdown_time = 1,
 		.init = &cs35l41_init,
