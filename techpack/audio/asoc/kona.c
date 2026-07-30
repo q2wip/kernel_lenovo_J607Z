@@ -5452,7 +5452,7 @@ static int msm_mi2s_cs35l41_startup(struct snd_pcm_substream *substream)
 	struct snd_soc_card *card = rtd->card;
 	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
 	struct snd_soc_dai *codec_dai = rtd->codec_dai;
-	struct snd_soc_codec *codec = codec_dai->codec;
+	struct snd_soc_component *component = codec_dai->component;
 	int ret;
 
 	if (atomic_inc_return(&cs35l41_mclk_rsc_ref) == 1) {
@@ -5477,7 +5477,7 @@ static int msm_mi2s_cs35l41_startup(struct snd_pcm_substream *substream)
 		}
 
 		// Set mclk to 12.288MHz for codec
-		ret = snd_soc_codec_set_sysclk(codec, 0, 0,
+		ret = snd_soc_component_set_sysclk(component, 0, 0,
 				Q6AFE_LPASS_IBIT_CLK_1_P536_MHZ,
 				SND_SOC_CLOCK_IN);
 		if (ret < 0) {
@@ -5493,17 +5493,12 @@ void msm_mi2s_cs35l41_shutdown(struct snd_pcm_substream *substream)
 {
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
 	struct snd_soc_card *card = rtd->card;
-	struct snd_soc_dai *codec_dai = rtd->codec_dai;
-	struct snd_soc_codec *codec = codec_dai->codec;
-	struct msm_asoc_mach_data *pdata = pdata = snd_soc_card_get_drvdata(codec->component.card);
-
 
 	if (atomic_dec_return(&cs35l41_mclk_rsc_ref) == 0) {
 		msm_mi2s_snd_shutdown(substream);
 	}
 
 	dev_info(card->dev, "-----%s\n", __func__);
-	return;
 }
 
 static struct snd_soc_ops msm_mi2s_cs35l41_be_ops = {
@@ -5515,10 +5510,10 @@ static struct snd_soc_ops msm_mi2s_cs35l41_be_ops = {
 static int cs35l41_init(struct snd_soc_pcm_runtime *rtd)
 {
 	struct snd_soc_card *card = rtd->card;
-	struct snd_soc_codec *spk_cdc = rtd->codec_dais[0]->codec;
-	struct snd_soc_dapm_context *spk_dapm = snd_soc_codec_get_dapm(spk_cdc);
+	struct snd_soc_component *component = rtd->codec_dais[0]->component;
+	struct snd_soc_dapm_context *spk_dapm = snd_soc_component_get_dapm(component);
 
-	dev_info(card->dev, "%s: found codec[%s]\n", __func__, dev_name(spk_cdc->dev));
+	dev_info(card->dev, "%s: found codec[%s]\n", __func__, dev_name(component->dev));
 	snd_soc_dapm_ignore_suspend(spk_dapm, "AMP Playback");
 	snd_soc_dapm_ignore_suspend(spk_dapm, "AMP Capture");
 	snd_soc_dapm_ignore_suspend(spk_dapm, "DSP1");
