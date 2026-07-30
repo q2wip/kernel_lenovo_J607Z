@@ -7261,7 +7261,7 @@ static struct snd_soc_dai_link tert_mi2s_rx_cs35l41_be_dai_links[] = {
 	{
 		.name = LPASS_BE_TERT_MI2S_RX,
 		.stream_name = "Tertiary MI2S Playback",
-		.cpu_dai_name = "msm-dai-q6-mi2s.2",
+		.cpu_dai_name = "TERT_MI2S_RX_HOSTLESS",
 		.platform_name = "msm-pcm-hostless",
 		.codecs = cs35l41_codec_components,
 		.num_codecs = ARRAY_SIZE(cs35l41_codec_components),
