@@ -8491,7 +8491,8 @@ codec_aux_dev:
 
 aux_dev_register:
 	card->num_aux_devs = wsa_max_devs + codec_aux_dev_cnt;
-	card->num_configs = wsa_max_devs + codec_aux_dev_cnt;
+	card->num_configs = wsa_max_devs + codec_aux_dev_cnt +
+				ARRAY_SIZE(cs35l41_codec_conf);
 
 	/* Alloc array of AUX devs struct */
 	msm_aux_dev = devm_kcalloc(&pdev->dev, card->num_aux_devs,
@@ -8555,6 +8556,12 @@ aux_dev_register:
 		msm_codec_conf[wsa_max_devs + i].of_node =
 				aux_cdc_dev_info[i].of_node;
 	}
+
+	/* Merge cs35l41 codec confs (SPK1-SPK4 name_prefix) so their
+	 * kcontrols get prefixed and do not collide across 4 chips */
+	for (i = 0; i < ARRAY_SIZE(cs35l41_codec_conf); i++)
+		msm_codec_conf[wsa_max_devs + codec_aux_dev_cnt + i] =
+					cs35l41_codec_conf[i];
 
 	card->codec_conf = msm_codec_conf;
 	card->aux_dev = msm_aux_dev;
