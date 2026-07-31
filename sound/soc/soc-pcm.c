@@ -3250,26 +3250,6 @@ static int dpcm_fe_dai_open(struct snd_pcm_substream *fe_substream)
 			fe->dai_link->name, stream ? "capture" : "playback");
 	}
 
-	/* J607F bringup debug: dump DAPM path discovery for playback FE */
-	if (stream == SNDRV_PCM_STREAM_PLAYBACK) {
-		struct snd_soc_dapm_widget *pw = fe->cpu_dai->playback_widget;
-		struct snd_soc_dapm_path *pp;
-		int eout = 0, i;
-
-		list_for_each_entry(pp, &pw->edges[SND_SOC_DAPM_DIR_IN],
-				    list_node[SND_SOC_DAPM_DIR_IN])
-			eout++;
-		pr_err("J607F-DBG: %s paths=%d start='%s' id=%d is_ep=%d conn=%d out_edges=%d\n",
-		       __func__, ret, pw->name, pw->id, pw->is_ep,
-		       pw->connected, eout);
-		if (list) {
-			for (i = 0; i < list->num_widgets; i++)
-				pr_err("J607F-DBG:   w[%d]='%s' id=%d\n", i,
-				       list->widgets[i]->name,
-				       list->widgets[i]->id);
-		}
-	}
-
 	/* calculate valid and active FE <-> BE dpcms */
 	dpcm_process_paths(fe, stream, &list, 1);
 
