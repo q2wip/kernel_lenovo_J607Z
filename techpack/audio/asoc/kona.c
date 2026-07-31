@@ -94,23 +94,9 @@ static atomic_t cs35l41_mclk_rsc_ref;
 
 #define CS35L41_SPEAKER_NAME "cs35l41.3-0040"
 #define CS35L41_RECEIVER_NAME "cs35l41.3-0041"
-#define CS35L41_SPK3_NAME "cs35l41.3-0042"
-#define CS35L41_SPK4_NAME "cs35l41.3-0043"
 struct snd_soc_dai_link_component cs35l41_codec_components[] = {
 	{
 		.name = CS35L41_SPEAKER_NAME,
-		.dai_name = "cs35l41-pcm",
-	},
-	{
-		.name = CS35L41_RECEIVER_NAME,
-		.dai_name = "cs35l41-pcm",
-	},
-	{
-		.name = CS35L41_SPK3_NAME,
-		.dai_name = "cs35l41-pcm",
-	},
-	{
-		.name = CS35L41_SPK4_NAME,
 		.dai_name = "cs35l41-pcm",
 	},
 };
@@ -118,19 +104,7 @@ struct snd_soc_dai_link_component cs35l41_codec_components[] = {
 static struct snd_soc_codec_conf cs35l41_codec_conf[] = {
 	{
 		.dev_name	= CS35L41_SPEAKER_NAME,
-		.name_prefix	= "SPK1",
-	},
-	{
-		.dev_name	= CS35L41_RECEIVER_NAME,
-		.name_prefix	= "SPK2",
-	},
-	{
-		.dev_name	= CS35L41_SPK3_NAME,
-		.name_prefix	= "SPK3",
-	},
-	{
-		.dev_name	= CS35L41_SPK4_NAME,
-		.name_prefix	= "SPK4",
+		.name_prefix	= "SPK",
 	},
 };
 
@@ -5536,26 +5510,20 @@ static struct snd_soc_ops msm_mi2s_cs35l41_be_ops = {
 static int cs35l41_init(struct snd_soc_pcm_runtime *rtd)
 {
 	struct snd_soc_card *card = rtd->card;
-	int j;
+	struct snd_soc_component *component = rtd->codec_dais[0]->component;
+	struct snd_soc_dapm_context *spk_dapm = snd_soc_component_get_dapm(component);
 
-	for (j = 0; j < rtd->num_codecs; j++) {
-		struct snd_soc_component *component = rtd->codec_dais[j]->component;
-		struct snd_soc_dapm_context *spk_dapm =
-			snd_soc_component_get_dapm(component);
-
-		dev_info(card->dev, "%s: found codec[%s]\n",
-			 __func__, dev_name(component->dev));
-		snd_soc_dapm_ignore_suspend(spk_dapm, "AMP Playback");
-		snd_soc_dapm_ignore_suspend(spk_dapm, "AMP Capture");
-		snd_soc_dapm_ignore_suspend(spk_dapm, "DSP1");
-		snd_soc_dapm_ignore_suspend(spk_dapm, "Main AMP");
-		snd_soc_dapm_ignore_suspend(spk_dapm, "ASPRX1");
-		snd_soc_dapm_ignore_suspend(spk_dapm, "ASPRX2");
-		snd_soc_dapm_ignore_suspend(spk_dapm, "ASPTX1");
-		snd_soc_dapm_ignore_suspend(spk_dapm, "ASPTX2");
-		snd_soc_dapm_ignore_suspend(spk_dapm, "SPK");
-		snd_soc_dapm_sync(spk_dapm);
-	}
+	dev_info(card->dev, "%s: found codec[%s]\n", __func__, dev_name(component->dev));
+	snd_soc_dapm_ignore_suspend(spk_dapm, "AMP Playback");
+	snd_soc_dapm_ignore_suspend(spk_dapm, "AMP Capture");
+	snd_soc_dapm_ignore_suspend(spk_dapm, "DSP1");
+	snd_soc_dapm_ignore_suspend(spk_dapm, "Main AMP");
+	snd_soc_dapm_ignore_suspend(spk_dapm, "ASPRX1");
+	snd_soc_dapm_ignore_suspend(spk_dapm, "ASPRX2");
+	snd_soc_dapm_ignore_suspend(spk_dapm, "ASPTX1");
+	snd_soc_dapm_ignore_suspend(spk_dapm, "ASPTX2");
+	snd_soc_dapm_ignore_suspend(spk_dapm, "SPK");
+	snd_soc_dapm_sync(spk_dapm);
 	return 0;
 }
 
