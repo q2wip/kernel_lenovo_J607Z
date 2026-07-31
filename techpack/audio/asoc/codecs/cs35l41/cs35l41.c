@@ -3019,24 +3019,7 @@ static int cs35l41_component_probe(struct snd_soc_component *component)
 		wm_adsp2_component_probe(&cs35l41->dsp, component);
 		cs35l41->skip_codec_probe = true;
 
-	if (component->name_prefix) {
-		/* widgets carry the codec_conf name_prefix (SPK1..SPK4);
-		 * the unprefixed/RCV names can never match, so use the
-		 * prefixed names (mirror of fw_reload_work handling) */
-		static const char * const wnames[] = {
-			"AMP Playback", "AMP Capture", "Main AMP",
-			"SPK", "VP", "VBST", "ISENSE", "VSENSE",
-			"TEMP", "DSP1 Preloader", "DSP1 Preload",
-		};
-		char fullname[80] = {0};
-		int k;
-
-		for (k = 0; k < ARRAY_SIZE(wnames); k++) {
-			snprintf(fullname, sizeof(fullname), "%s %s",
-				 component->name_prefix, wnames[k]);
-			snd_soc_dapm_ignore_suspend(dapm, fullname);
-		}
-	} else if (cs35l41->pdata.right_channel) {
+	if (cs35l41->pdata.right_channel) {
 		snd_soc_dapm_ignore_suspend(dapm, "AMP Playback");
 		snd_soc_dapm_ignore_suspend(dapm, "AMP Capture");
 		snd_soc_dapm_ignore_suspend(dapm, "Main AMP");

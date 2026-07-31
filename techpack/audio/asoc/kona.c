@@ -5536,48 +5536,25 @@ static struct snd_soc_ops msm_mi2s_cs35l41_be_ops = {
 static int cs35l41_init(struct snd_soc_pcm_runtime *rtd)
 {
 	struct snd_soc_card *card = rtd->card;
-	static const char * const pfx[] = {"SPK1", "SPK2", "SPK3", "SPK4"};
 	int j;
 
 	for (j = 0; j < rtd->num_codecs; j++) {
 		struct snd_soc_component *component = rtd->codec_dais[j]->component;
 		struct snd_soc_dapm_context *spk_dapm =
 			snd_soc_component_get_dapm(component);
-		char fullname[80] = {0};
 
 		dev_info(card->dev, "%s: found codec[%s]\n",
 			 __func__, dev_name(component->dev));
-		/* widgets are registered with the codec_conf name_prefix
-		 * (SPK1..SPK4), so rebuild the prefixed names like the
-		 * cs35l41 driver itself does (cs35l41.c fw_reload_work)
-		 */
-		snprintf(fullname, sizeof(fullname), "%s %s",
-			 pfx[j], "AMP Playback");
-		snd_soc_dapm_ignore_suspend(spk_dapm, fullname);
-		snprintf(fullname, sizeof(fullname), "%s %s",
-			 pfx[j], "AMP Capture");
-		snd_soc_dapm_ignore_suspend(spk_dapm, fullname);
-		snprintf(fullname, sizeof(fullname), "%s %s",
-			 pfx[j], "SPK");
-		snd_soc_dapm_ignore_suspend(spk_dapm, fullname);
-		snprintf(fullname, sizeof(fullname), "%s %s",
-			 pfx[j], "VMON ADC");
-		snd_soc_dapm_ignore_suspend(spk_dapm, fullname);
+		snd_soc_dapm_ignore_suspend(spk_dapm, "AMP Playback");
+		snd_soc_dapm_ignore_suspend(spk_dapm, "AMP Capture");
+		snd_soc_dapm_ignore_suspend(spk_dapm, "DSP1");
+		snd_soc_dapm_ignore_suspend(spk_dapm, "Main AMP");
+		snd_soc_dapm_ignore_suspend(spk_dapm, "ASPRX1");
+		snd_soc_dapm_ignore_suspend(spk_dapm, "ASPRX2");
+		snd_soc_dapm_ignore_suspend(spk_dapm, "ASPTX1");
+		snd_soc_dapm_ignore_suspend(spk_dapm, "ASPTX2");
+		snd_soc_dapm_ignore_suspend(spk_dapm, "SPK");
 		snd_soc_dapm_sync(spk_dapm);
-	}
-
-	for (j = 0; j < rtd->num_codecs; j++) {
-		/* Set codec_dai as slave + sysclk (PE kona.c
-		 * cs35l41_mi2s_snd_init_group1 parity) */
-		snd_soc_dai_set_fmt(rtd->codec_dais[j],
-				SND_SOC_DAIFMT_CBS_CFS | SND_SOC_DAIFMT_I2S);
-		snd_soc_component_set_sysclk(
-				rtd->codec_dais[j]->component, 0, 0,
-				Q6AFE_LPASS_IBIT_CLK_1_P536_MHZ,
-				SND_SOC_CLOCK_IN);
-		snd_soc_dai_set_sysclk(rtd->codec_dais[j], 0,
-				Q6AFE_LPASS_IBIT_CLK_1_P536_MHZ,
-				SND_SOC_CLOCK_IN);
 	}
 	return 0;
 }
