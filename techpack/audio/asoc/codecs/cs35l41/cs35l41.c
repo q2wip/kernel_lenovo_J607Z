@@ -1354,6 +1354,25 @@ static SOC_VALUE_ENUM_SINGLE_DECL(cs35l41_output_dev, SND_SOC_NOPM, 0, 0,
 				  cs35l41_output_dev_text,
 				  cs35l41_output_dev_val);
 
+/*
+ * A13 audio HAL (audio.primary.lito.so) queries the CSPL calibration
+ * kcontrols (SPK1-4 DSP1X calibration/protection cd CAL_*) and retries
+ * forever when they are missing, wedging boot. Provide stubs so the HAL
+ * proceeds; values are not consumed by this bringup kernel.
+ */
+static int cs35l41_cspl_dummy_get(struct snd_kcontrol *kcontrol,
+				  struct snd_ctl_elem_value *ucontrol)
+{
+	ucontrol->value.integer.value[0] = 0;
+	return 0;
+}
+
+static int cs35l41_cspl_dummy_put(struct snd_kcontrol *kcontrol,
+				  struct snd_ctl_elem_value *ucontrol)
+{
+	return 0;
+}
+
 static const struct snd_kcontrol_new cs35l41_aud_controls[] = {
 	SOC_SINGLE_RANGE_EXT_TLV("Digital PCM Volume", SND_SOC_NOPM, 0, 0,
 				 CS35L41_MAX_PCM_VOL, 0, cs35l41_get_vol,
@@ -1416,6 +1435,31 @@ static const struct snd_kcontrol_new cs35l41_aud_controls[] = {
 		       cs35l41_put_auto_ramp_timeout),
 	SOC_VALUE_ENUM_EXT("Audio Output Device", cs35l41_output_dev,
 			   cs35l41_get_output_dev, cs35l41_put_output_dev),
+	SOC_SINGLE_EXT("AMP Enable Switch", SND_SOC_NOPM, 0, 1, 0,
+		       cs35l41_cspl_dummy_get, cs35l41_cspl_dummy_put),
+	SOC_SINGLE_EXT("Fast Use Case Delta File", SND_SOC_NOPM, 0,
+		       0x7fffffff, 0, cs35l41_cspl_dummy_get,
+		       cs35l41_cspl_dummy_put),
+	SOC_SINGLE_EXT("DSP1X calibration cd CAL_R", SND_SOC_NOPM, 0, 0, 0,
+		       cs35l41_cspl_dummy_get, cs35l41_cspl_dummy_put),
+	SOC_SINGLE_EXT("DSP1X calibration cd CAL_STATUS", SND_SOC_NOPM, 0, 0, 0,
+		       cs35l41_cspl_dummy_get, cs35l41_cspl_dummy_put),
+	SOC_SINGLE_EXT("DSP1X calibration cd CAL_AMBIENT", SND_SOC_NOPM, 0, 0, 0,
+		       cs35l41_cspl_dummy_get, cs35l41_cspl_dummy_put),
+	SOC_SINGLE_EXT("DSP1X calibration cd DIAG_F0", SND_SOC_NOPM, 0, 0, 0,
+		       cs35l41_cspl_dummy_get, cs35l41_cspl_dummy_put),
+	SOC_SINGLE_EXT("DSP1X calibration cd DIAG_F0_STATUS", SND_SOC_NOPM, 0, 0, 0,
+		       cs35l41_cspl_dummy_get, cs35l41_cspl_dummy_put),
+	SOC_SINGLE_EXT("DSP1X protection cd CAL_AMBIENT", SND_SOC_NOPM, 0, 0, 0,
+		       cs35l41_cspl_dummy_get, cs35l41_cspl_dummy_put),
+	SOC_SINGLE_EXT("DSP1X protection cd CAL_CHECKSUM", SND_SOC_NOPM, 0, 0, 0,
+		       cs35l41_cspl_dummy_get, cs35l41_cspl_dummy_put),
+	SOC_SINGLE_EXT("DSP1X protection cd CAL_R", SND_SOC_NOPM, 0, 0, 0,
+		       cs35l41_cspl_dummy_get, cs35l41_cspl_dummy_put),
+	SOC_SINGLE_EXT("DSP1X protection cd CAL_STATUS", SND_SOC_NOPM, 0, 0, 0,
+		       cs35l41_cspl_dummy_get, cs35l41_cspl_dummy_put),
+	SOC_SINGLE_EXT("DSP1X protection cd CH_BAL", SND_SOC_NOPM, 0, 0, 0,
+		       cs35l41_cspl_dummy_get, cs35l41_cspl_dummy_put),
 };
 
 static const struct snd_kcontrol_new cs35l41_bst_ctl[] = {
