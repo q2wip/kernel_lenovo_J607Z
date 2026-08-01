@@ -2790,6 +2790,8 @@ static int qseecom_load_app(struct qseecom_dev_handle *data, void __user *argp)
 		pr_err("copy_from_user failed\n");
 		return -EFAULT;
 	}
+	pr_err("J607F-DBG: qseecom_load_app: img_name='%s' arch=%d\n",
+			load_img_req.img_name, load_img_req.app_arch);
 
 	/* Check and load cmnlib */
 	if (qseecom.qsee_version > QSEEE_VERSION_00) {
