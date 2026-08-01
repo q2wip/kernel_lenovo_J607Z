@@ -2928,6 +2928,11 @@ static void dwc3_ext_event_notify(struct dwc3_msm *mdwc)
 	/* Flush processing any pending events before handling new ones */
 	flush_delayed_work(&mdwc->sm_work);
 
+	dev_err(mdwc->dev,
+		"DIAG: ext_event id_state=%d vbus=%d susp=%d w4lpm=%d drd=%d\n",
+		mdwc->id_state, mdwc->vbus_active, mdwc->suspend,
+		test_bit(WAIT_FOR_LPM, &mdwc->inputs), mdwc->drd_state);
+
 	if (mdwc->id_state == DWC3_ID_FLOAT) {
 		dev_dbg(mdwc->dev, "XCVR: ID set\n");
 		set_bit(ID, &mdwc->inputs);
@@ -3333,7 +3338,8 @@ static int dwc3_msm_id_notifier(struct notifier_block *nb,
 
 	mdwc->ext_idx = enb->idx;
 
-	dev_dbg(mdwc->dev, "host:%ld (id:%d) event received\n", event, id);
+	dev_err(mdwc->dev, "DIAG: id_notifier event=%ld id=%d (idx=%d)\n",
+		event, id, enb->idx);
 
 	mdwc->id_state = id;
 	dbg_event(0xFF, "id_state", mdwc->id_state);
@@ -4813,10 +4819,17 @@ static void dwc3_otg_sm_work(struct work_struct *w)
 		/* fall-through */
 	case DRD_STATE_IDLE:
 		if (test_bit(WAIT_FOR_LPM, &mdwc->inputs)) {
-			dev_dbg(mdwc->dev, "still not in lpm, wait.\n");
+			dev_err(mdwc->dev,
+				"DIAG: IDLE waiting LPM (w4lpm=1) id=%d bsv=%d\n",
+				test_bit(ID, &mdwc->inputs),
+				test_bit(B_SESS_VLD, &mdwc->inputs));
 			break;
 		}
 
+		dev_err(mdwc->dev,
+			"DIAG: IDLE eval id=%d bsv=%d\n",
+			test_bit(ID, &mdwc->inputs),
+			test_bit(B_SESS_VLD, &mdwc->inputs));
 		if (!test_bit(ID, &mdwc->inputs)) {
 			dev_dbg(mdwc->dev, "!id\n");
 			mdwc->drd_state = DRD_STATE_HOST_IDLE;
