@@ -1057,7 +1057,7 @@ exit:
 	atomic_set(&cs35l41->vol_ctl.manual_ramp, 0);
 }
 
-static int cs35l41_get_vol(struct snd_kcontrol *kcontrol,
+static int __maybe_unused cs35l41_get_vol(struct snd_kcontrol *kcontrol,
 			   struct snd_ctl_elem_value *ucontrol)
 {
 	struct snd_soc_component *component;
@@ -1071,7 +1071,7 @@ static int cs35l41_get_vol(struct snd_kcontrol *kcontrol,
 	return 0;
 }
 
-static int cs35l41_put_vol(struct snd_kcontrol *kcontrol,
+static int __maybe_unused cs35l41_put_vol(struct snd_kcontrol *kcontrol,
 			   struct snd_ctl_elem_value *ucontrol)
 {
 	struct snd_soc_component *component;
@@ -1374,9 +1374,8 @@ static int cs35l41_cspl_dummy_put(struct snd_kcontrol *kcontrol,
 }
 
 static const struct snd_kcontrol_new cs35l41_aud_controls[] = {
-	SOC_SINGLE_RANGE_EXT_TLV("Digital PCM Volume", SND_SOC_NOPM, 0, 0,
-				 CS35L41_MAX_PCM_VOL, 0, cs35l41_get_vol,
-				 cs35l41_put_vol, dig_vol_tlv),
+	SOC_SINGLE_SX_TLV("Digital PCM Volume", CS35L41_AMP_DIG_VOL_CTRL,
+			 3, 0x4CF, 0x391, dig_vol_tlv),
 	SOC_SINGLE_TLV("AMP PCM Gain", CS35L41_AMP_GAIN_CTRL, 5, 0x14, 0,
 			amp_gain_tlv),
 	SOC_SINGLE_RANGE("ASPTX1 Slot Position", CS35L41_SP_FRAME_TX_SLOT, 0,
