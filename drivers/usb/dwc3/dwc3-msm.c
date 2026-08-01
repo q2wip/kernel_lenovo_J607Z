@@ -2928,6 +2928,16 @@ static void dwc3_ext_event_notify(struct dwc3_msm *mdwc)
 	/* Flush processing any pending events before handling new ones */
 	flush_delayed_work(&mdwc->sm_work);
 
+	/*
+	 * WAIT_FOR_LPM is set by dwc3_msm_resume (no vbus + id grounded)
+	 * and cleared only on suspend completion. In host mode the device
+	 * never suspends, so once set it would block the OTG SM in IDLE
+	 * forever (DRD_STATE_IDLE breaks on WAIT_FOR_LPM), killing both
+	 * OTG and subsequent device mode. A new extcon/PSY event means the
+	 * state changed, so stop waiting and re-evaluate.
+	 */
+	clear_bit(WAIT_FOR_LPM, &mdwc->inputs);
+
 	dev_err(mdwc->dev,
 		"DIAG: ext_event id_state=%d vbus=%d susp=%d w4lpm=%d drd=%d\n",
 		mdwc->id_state, mdwc->vbus_active, mdwc->suspend,
