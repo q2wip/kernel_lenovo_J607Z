@@ -95,6 +95,20 @@ static int sde_backlight_device_update_status(struct backlight_device *bd)
 	if (!bl_lvl && brightness)
 		bl_lvl = 1;
 
+	/*
+	 * J607F panel (SGM backlight): the backlight is fully off below
+	 * ~6.7% PWM (UI brightness 17/255). Clamp non-zero levels so the
+	 * screen never goes completely black at low brightness.
+	 */
+	if (brightness) {
+		int min_bl_lvl = mult_frac(17,
+				display->panel->bl_config.bl_max_level,
+				display->panel->bl_config.brightness_max_level);
+
+		if (bl_lvl < min_bl_lvl)
+			bl_lvl = min_bl_lvl;
+	}
+
 	if (!c_conn->allow_bl_update) {
 		c_conn->unset_bl_level = bl_lvl;
 		return 0;
