@@ -3917,11 +3917,19 @@ static int psy_changed(struct notifier_block *nb, unsigned long evt, void *ptr)
 	ret = power_supply_get_property(pd->usb_psy,
 			POWER_SUPPLY_PROP_UV_WA, &val);
 	if (ret) {
-		usbpd_err(&pd->dev, "Unable to read UV_WA: %d\n", ret);
-		return ret;
+		/*
+		 * UV_WA is not implemented by smb5 on this kernel (prop added
+		 * in newer policy_engine, charger side never gained it).
+		 * Fall back to default (no under-voltage workaround) instead
+		 * of bailing out — returning here would deadlock the whole PD
+		 * engine: TYPEC_MODE/PE_START below would never be processed,
+		 * typec class state never updated, and UsbPortManager would
+		 * report port0 disconnected (grayed-out USB preferences).
+		 */
+		pd->uv_wa = 0;
+	} else {
+		pd->uv_wa = val.intval;
 	}
-
-	pd->uv_wa = val.intval;
 
 	ret = power_supply_get_property(pd->usb_psy,
 			POWER_SUPPLY_PROP_TYPEC_MODE, &val);
