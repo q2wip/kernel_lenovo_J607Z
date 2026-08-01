@@ -3476,13 +3476,16 @@ static int dwc3_msm_psy_notifier(struct notifier_block *nb,
 		mdwc->vbus_active = false;
 		dwc3_ext_event_notify(mdwc);
 		queue_delayed_work(mdwc->sm_usb_wq, &mdwc->sm_work, 0);
-	} else if (val.intval && mdwc->vbus_active &&
-			mdwc->drd_state == DRD_STATE_PERIPHERAL) {
-		mdwc->drd_state = DRD_STATE_IDLE;
-		dwc3_otg_start_peripheral(mdwc, 0);
-		mdwc->vbus_active = true;
-		dwc3_ext_event_notify(mdwc);
 	}
+	/*
+	 * Third branch (teardown PERIPHERAL when PRESENT=1 && vbus_active &&
+	 * drd==PERIPHERAL) was removed: it existed for the stale vbus_active
+	 * left by the old probe force-set, which commit 54989183 eliminated.
+	 * With the PD engine alive, smb5 emits a PSY changed storm (ICL/APS D
+	 * updates); the third branch tore down PERIPHERAL on every event, so
+	 * the gadget was never enumerated (wired ADB dead after boot). The
+	 * first two branches + OTG SM re-evaluation handle connect/disconnect.
+	 */
 
 	return NOTIFY_OK;
 }
