@@ -628,8 +628,6 @@ static int dbmd4_spi_probe(struct spi_device *client)
 	struct dbmdx_spi_private *p;
 	struct chip_interface *ci;
 
-	dev_err(p->dev, "%s\n", __func__);
-
 	rc = spi_common_probe(client);
 
 	if (rc < 0)
