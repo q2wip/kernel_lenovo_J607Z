@@ -1310,6 +1310,8 @@ static int swrm_get_logical_dev_num(struct swr_master *mstr, u64 dev_id,
 			    SWRM_ENUMERATOR_SLAVE_DEV_ID_2(i))) << 32);
 		id |= swrm->read(swrm->handle,
 			    SWRM_ENUMERATOR_SLAVE_DEV_ID_1(i));
+		pr_info("J607F-SWR: %s enum slot %d raw id 0x%llx (want 0x%llx)\n",
+			swrm->pdev->name, i, id, dev_id);
 		/*
 		 * As pm_runtime_get_sync() brings all slaves out of reset
 		 * update logical device number for all slaves.
