@@ -397,11 +397,11 @@
 };
 
 /*
- * Audio: J607F (arnoz) has no WSA speakers — uses WCD938x codec +
+ * Audio: J607F (arnoz) has no WSA speakers — uses WCD937x codec +
  * 4x CS35L41 Cirrus Logic smart amps on TERT_MI2S_RX backend.
  *
- * WCD938x is enabled in lagoon-audio-overlay.dtsi (status="ok").
- * WCD937x is disabled in lagoon-audio-overlay.dtsi (status="disabled").
+ * WCD937x is enabled in lagoon-audio-overlay.dtsi (status="ok").
+ * WCD938x is disabled in lagoon-audio-overlay.dtsi (status="disabled").
  * The 4 CS35L41 I2C nodes (0x40-0x43) live in lagoon.dts base DTB.
  *
  * kona.c adds CS35L41 DAI links when mi2s-audio-intf = <1>:
@@ -417,7 +417,7 @@
 	/delete-property/ qcom,wsa-aux-dev-prefix;
 
 	qcom,codec-max-aux-devs = <1>;
-	qcom,codec-aux-devs = <&wcd938x_codec>;
+	qcom,codec-aux-devs = <&wcd937x_codec>;
 
 	qcom,mi2s-audio-intf = <1>;
 	qcom,tdm-audio-intf = <0>;
