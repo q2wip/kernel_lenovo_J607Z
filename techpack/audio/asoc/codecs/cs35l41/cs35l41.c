@@ -1057,7 +1057,7 @@ exit:
 	atomic_set(&cs35l41->vol_ctl.manual_ramp, 0);
 }
 
-static int cs35l41_get_vol(struct snd_kcontrol *kcontrol,
+static int __maybe_unused cs35l41_get_vol(struct snd_kcontrol *kcontrol,
 			   struct snd_ctl_elem_value *ucontrol)
 {
 	struct snd_soc_component *component;
@@ -1071,7 +1071,7 @@ static int cs35l41_get_vol(struct snd_kcontrol *kcontrol,
 	return 0;
 }
 
-static int cs35l41_put_vol(struct snd_kcontrol *kcontrol,
+static int __maybe_unused cs35l41_put_vol(struct snd_kcontrol *kcontrol,
 			   struct snd_ctl_elem_value *ucontrol)
 {
 	struct snd_soc_component *component;
@@ -1374,9 +1374,8 @@ static int cs35l41_cspl_dummy_put(struct snd_kcontrol *kcontrol,
 }
 
 static const struct snd_kcontrol_new cs35l41_aud_controls[] = {
-	SOC_SINGLE_EXT_TLV("Digital PCM Volume", SND_SOC_NOPM, 0,
-			   CS35L41_MAX_PCM_VOL, 0,
-			   cs35l41_get_vol, cs35l41_put_vol, dig_vol_tlv),
+	SOC_SINGLE_SX_TLV("Digital PCM Volume", CS35L41_AMP_DIG_VOL_CTRL,
+			 3, 0x4CF, 0x391, dig_vol_tlv),
 	SOC_SINGLE_TLV("AMP PCM Gain", CS35L41_AMP_GAIN_CTRL, 5, 0x14, 0,
 			amp_gain_tlv),
 	SOC_SINGLE_RANGE("ASPTX1 Slot Position", CS35L41_SP_FRAME_TX_SLOT, 0,
@@ -2088,8 +2087,9 @@ static void cs35l41_fw_reload_work(struct work_struct *work)
 		dev_err(cs35l41->dev,
 				"Failed on main event PMU\n");
 
-	/* Unmute, restoring the digital PCM volume set via mixer path */
-	cs35l41_set_vol(cs35l41->vol_ctl.dig_vol, cs35l41);
+	/* Unmute */
+	regmap_update_bits(cs35l41->regmap,
+			CS35L41_AMP_DIG_VOL_CTRL, 0x7ff << 3, 0x0);
 
 	cs35l41->reload_status = FW_RELOAD_DONE;
 	mutex_unlock(&cs35l41->reload_lock);
@@ -2751,8 +2751,8 @@ static int  cs35l41_digital_mute(struct snd_soc_dai *dai, int mute)
 				0x7ff << 3, 0x400 << 3);
 		mdelay(30);
 	} else {
-		/* Unmute, restoring the digital PCM volume set via mixer path */
-		cs35l41_set_vol(cs35l41->vol_ctl.dig_vol, cs35l41);
+		regmap_update_bits(cs35l41->regmap, CS35L41_AMP_DIG_VOL_CTRL,
+				0x7ff << 3, 0x0 << 3);
 	}
 
 	return 0;
@@ -4007,7 +4007,7 @@ int cs35l41_probe(struct cs35l41_private *cs35l41,
 	irq_pol = cs35l41_irq_gpio_config(cs35l41);
 
 	mutex_init(&cs35l41->vol_ctl.vol_mutex);
-	cs35l41->vol_ctl.dig_vol = CS35L41_ZERO_PCM_VOL;
+	cs35l41->vol_ctl.dig_vol = 0;
 	cs35l41->vol_ctl.ramp_init_att = 0;
 	cs35l41->vol_ctl.ramp_knee_att = 0;
 	cs35l41->vol_ctl.ramp_knee_time = 0;
