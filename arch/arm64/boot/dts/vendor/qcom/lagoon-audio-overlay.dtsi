@@ -221,13 +221,18 @@
 		qcom,cdc-vdd-buck-voltage = <1800000 1800000>;
 		qcom,cdc-vdd-buck-current = <650000>;
 
+		cdc-vdd-mic-bias-supply = <&BOB>;
+		qcom,cdc-vdd-mic-bias-voltage = <2350000 2350000>;
+		qcom,cdc-vdd-mic-bias-current = <30000>;
+
 		qcom,cdc-micbias1-mv = <1800>;
 		qcom,cdc-micbias2-mv = <1800>;
 		qcom,cdc-micbias3-mv = <1800>;
 		qcom,cdc-micbias4-mv = <1800>;
 
 		qcom,cdc-static-supplies = "cdc-vdd-rxtx",
-					   "cdc-vddio";
+					   "cdc-vddio",
+					   "cdc-vdd-mic-bias";
 		qcom,cdc-on-demand-supplies = "cdc-vdd-buck";
 	};
 
@@ -263,13 +268,18 @@
 		qcom,cdc-vdd-buck-voltage = <1800000 1800000>;
 		qcom,cdc-vdd-buck-current = <650000>;
 
+		cdc-vdd-mic-bias-supply = <&BOB>;
+		qcom,cdc-vdd-mic-bias-voltage = <2350000 2350000>;
+		qcom,cdc-vdd-mic-bias-current = <30000>;
+
 		qcom,cdc-micbias1-mv = <1800>;
 		qcom,cdc-micbias2-mv = <1800>;
 		qcom,cdc-micbias3-mv = <1800>;
 		qcom,cdc-micbias4-mv = <1800>;
 
 		qcom,cdc-static-supplies = "cdc-vdd-rxtx",
-					   "cdc-vddio";
+					   "cdc-vddio",
+					   "cdc-vdd-mic-bias";
 		qcom,cdc-on-demand-supplies = "cdc-vdd-buck";
 	};
 

@@ -50,6 +50,20 @@ static int wcd937x_slave_bind(struct device *dev,
 	} while (--retry);
 
 	if (ret) {
+		/*
+		 * J607F: the wcd937x RX SWR slave (0x1170224) never
+		 * enumerates on rx_swr_ctrl -- the RX SWR channel is not
+		 * wired on this board.  Tolerate the failure so the codec
+		 * can still register and the TX (mic) path works.
+		 * The TX slave (0x1170223) must succeed.
+		 */
+		if ((pdev->addr & 0xFFFFFFFF) == 0x1170224) {
+			dev_info(&pdev->dev,
+				"%s: RX slave not enumerated (addr %lx), continuing\n",
+				__func__, pdev->addr);
+			pdev->dev_num = 0;
+			return 0;
+		}
 		dev_err(&pdev->dev,
 			"%s get devnum for dev addr %lx failed after retries\n",
 			__func__, pdev->addr);

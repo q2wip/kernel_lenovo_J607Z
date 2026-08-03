@@ -1159,6 +1159,15 @@ static int tx_macro_hw_params(struct snd_pcm_substream *substream,
 				__func__, decimator, sample_rate);
 			snd_soc_component_update_bits(component, tx_fs_reg,
 						0x0F, tx_fs_rate);
+			/*
+			 * J607F: the MSM_DMIC (SoC DMIC) clock lives in the
+			 * VA domain and is only enabled from the TX DMIC0
+			 * DAPM widget.  That widget is not powered by DAPM
+			 * when the machine driver's "Digital Mic0" sits in a
+			 * separate component.  Force the DMIC0 clock on here
+			 * so the built-in mic actually captures.
+			 */
+			bolero_dmic_clk_enable(component, 0, DMIC_TX, true);
 		} else {
 			dev_err(component->dev,
 				"%s: ERROR: Invalid decimator: %d\n",
