@@ -8,6 +8,7 @@
 #include <linux/clk.h>
 #include <linux/io.h>
 #include <linux/platform_device.h>
+#include <linux/pinctrl/consumer.h>
 #include <linux/regmap.h>
 #include <linux/pm_runtime.h>
 #include <sound/soc.h>
@@ -58,6 +59,7 @@ static const DECLARE_TLV_DB_SCALE(digital_gain, 0, 1, 0);
 static int tx_macro_hw_params(struct snd_pcm_substream *substream,
 			       struct snd_pcm_hw_params *params,
 			       struct snd_soc_dai *dai);
+
 static int tx_macro_get_channel_map(struct snd_soc_dai *dai,
 				unsigned int *tx_num, unsigned int *tx_slot,
 				unsigned int *rx_num, unsigned int *rx_slot);
@@ -145,6 +147,11 @@ struct hpf_work {
 
 struct tx_macro_priv {
 	struct device *dev;
+	struct pinctrl *pinctrl;
+	struct pinctrl_state *pinctrl_state1;
+	struct pinctrl_state *pinctrl_state2;
+	struct pinctrl_state *pinctrl_state3;
+	struct pinctrl_state *pinctrl_state4;
 	bool dec_active[NUM_DECIMATORS];
 	int tx_mclk_users;
 	int swr_clk_users;
@@ -178,6 +185,160 @@ struct tx_macro_priv {
 	bool hs_slow_insert_complete;
 	int pcm_rate[NUM_DECIMATORS];
 };
+
+/*
+ * J607F (longcheer): the built-in mic is gated by two GPIOs --
+ * gpio30 (mic_active/mic_sleep, mic front-end power) and
+ * gpio141 (mic_switch_active/mic_switch_sleep, mic signal switch).
+ * ref-PE A13 kernel selects these pinctrl states from the TX DMIC DAPM
+ * event; on A16 the DMIC widget never powers (cross-component DAPM chain
+ * not built), so the GPIOs would stay off and the mic stays dead.  Drive
+ * them from hw_params/shutdown instead (and init to sleep at probe).
+ */
+static int ap_mic_on = false;
+
+static int mic_enable(struct tx_macro_priv *tx_priv)
+{
+	int ret = 0;
+
+	tx_priv->pinctrl = devm_pinctrl_get(tx_priv->dev);
+	if (IS_ERR(tx_priv->pinctrl)) {
+		dev_err(tx_priv->dev, "%s: Couldn't get pinctrl rc=%ld\n",
+			__func__, PTR_ERR(tx_priv->pinctrl));
+		tx_priv->pinctrl = NULL;
+		return 0;
+	}
+	if (tx_priv->pinctrl) {
+		tx_priv->pinctrl_state1 = pinctrl_lookup_state(
+				tx_priv->pinctrl, "mic_active");
+		if (IS_ERR(tx_priv->pinctrl_state1)) {
+			dev_err(tx_priv->dev,
+				"%s: Couldn't get mic_active state\n", __func__);
+			return 0;
+		}
+		ret = pinctrl_select_state(tx_priv->pinctrl,
+					   tx_priv->pinctrl_state1);
+		if (ret) {
+			dev_err(tx_priv->dev,
+				"%s: cannot select mic active state\n", __func__);
+			return ret;
+		}
+		tx_priv->pinctrl_state3 = pinctrl_lookup_state(
+				tx_priv->pinctrl, "mic_switch_active");
+		if (IS_ERR(tx_priv->pinctrl_state3)) {
+			dev_err(tx_priv->dev,
+				"%s: Couldn't get mic_switch_active state\n",
+				__func__);
+			return 0;
+		}
+		ret = pinctrl_select_state(tx_priv->pinctrl,
+					   tx_priv->pinctrl_state3);
+		if (ret) {
+			dev_err(tx_priv->dev,
+				"%s: cannot select mic switch active state\n",
+				__func__);
+			return ret;
+		}
+	}
+	ap_mic_on = true;
+	dev_info(tx_priv->dev, "%s: mic power/switch on\n", __func__);
+	return ret;
+}
+
+static int mic_disable(struct tx_macro_priv *tx_priv)
+{
+	int ret = 0;
+
+	tx_priv->pinctrl = devm_pinctrl_get(tx_priv->dev);
+	if (IS_ERR(tx_priv->pinctrl)) {
+		dev_err(tx_priv->dev, "%s: Couldn't get pinctrl rc=%ld\n",
+			__func__, PTR_ERR(tx_priv->pinctrl));
+		tx_priv->pinctrl = NULL;
+		return 0;
+	}
+	if (tx_priv->pinctrl) {
+		tx_priv->pinctrl_state2 = pinctrl_lookup_state(
+				tx_priv->pinctrl, "mic_sleep");
+		if (IS_ERR(tx_priv->pinctrl_state2)) {
+			dev_err(tx_priv->dev,
+				"%s: Couldn't get mic_sleep state\n", __func__);
+			return 0;
+		}
+		ret = pinctrl_select_state(tx_priv->pinctrl,
+					   tx_priv->pinctrl_state2);
+		if (ret) {
+			dev_err(tx_priv->dev,
+				"%s: cannot select mic sleep state\n", __func__);
+			return ret;
+		}
+		tx_priv->pinctrl_state4 = pinctrl_lookup_state(
+				tx_priv->pinctrl, "mic_switch_sleep");
+		if (IS_ERR(tx_priv->pinctrl_state4)) {
+			dev_err(tx_priv->dev,
+				"%s: Couldn't get mic_switch_sleep state\n",
+				__func__);
+			return 0;
+		}
+		ret = pinctrl_select_state(tx_priv->pinctrl,
+					   tx_priv->pinctrl_state4);
+		if (ret) {
+			dev_err(tx_priv->dev,
+				"%s: cannot select mic switch sleep state\n",
+				__func__);
+			return ret;
+		}
+	}
+	ap_mic_on = false;
+	dev_info(tx_priv->dev, "%s: mic power/switch off\n", __func__);
+	return ret;
+}
+
+static int mic_ldo_int(struct tx_macro_priv *tx_priv)
+{
+	int ret = 0;
+
+	tx_priv->pinctrl = devm_pinctrl_get(tx_priv->dev);
+	if (IS_ERR(tx_priv->pinctrl)) {
+		dev_err(tx_priv->dev, "%s: Couldn't get pinctrl rc=%ld\n",
+			__func__, PTR_ERR(tx_priv->pinctrl));
+		tx_priv->pinctrl = NULL;
+		return 0;
+	}
+	if (tx_priv->pinctrl) {
+		tx_priv->pinctrl_state2 = pinctrl_lookup_state(
+				tx_priv->pinctrl, "mic_sleep");
+		if (IS_ERR(tx_priv->pinctrl_state2)) {
+			dev_err(tx_priv->dev,
+				"%s: Couldn't get mic_sleep state\n", __func__);
+			return 0;
+		}
+		ret = pinctrl_select_state(tx_priv->pinctrl,
+					   tx_priv->pinctrl_state2);
+		if (ret) {
+			dev_err(tx_priv->dev,
+				"%s: cannot select mic sleep state\n", __func__);
+			return ret;
+		}
+		tx_priv->pinctrl_state4 = pinctrl_lookup_state(
+				tx_priv->pinctrl, "mic_switch_sleep");
+		if (IS_ERR(tx_priv->pinctrl_state4)) {
+			dev_err(tx_priv->dev,
+				"%s: Couldn't get mic_switch_sleep state\n",
+				__func__);
+			return 0;
+		}
+		ret = pinctrl_select_state(tx_priv->pinctrl,
+					   tx_priv->pinctrl_state4);
+		if (ret) {
+			dev_err(tx_priv->dev,
+				"%s: cannot select mic switch sleep state\n",
+				__func__);
+			return ret;
+		}
+	}
+	dev_info(tx_priv->dev, "%s: mic pinctrl init to sleep\n", __func__);
+	return ret;
+}
 
 static bool tx_macro_get_data(struct snd_soc_component *component,
 			      struct device **tx_dev,
@@ -1167,6 +1328,7 @@ static int tx_macro_hw_params(struct snd_pcm_substream *substream,
 			 * separate component.  Force the DMIC0 clock on here
 			 * so the built-in mic actually captures.
 			 */
+			mic_enable(tx_priv);
 			bolero_dmic_clk_enable(component, 0, DMIC_TX, true);
 		} else {
 			dev_err(component->dev,
@@ -1203,8 +1365,21 @@ static int tx_macro_get_channel_map(struct snd_soc_dai *dai,
 	return 0;
 }
 
+static void tx_macro_shutdown(struct snd_pcm_substream *substream,
+			      struct snd_soc_dai *dai)
+{
+	struct snd_soc_component *component = dai->component;
+	struct device *tx_dev = NULL;
+	struct tx_macro_priv *tx_priv = NULL;
+
+	if (!tx_macro_get_data(component, &tx_dev, &tx_priv, __func__))
+		return;
+	mic_disable(tx_priv);
+}
+
 static struct snd_soc_dai_ops tx_macro_dai_ops = {
 	.hw_params = tx_macro_hw_params,
+	.shutdown = tx_macro_shutdown,
 	.get_channel_map = tx_macro_get_channel_map,
 };
 
@@ -3280,6 +3455,7 @@ static int tx_macro_probe(struct platform_device *pdev)
 	pm_runtime_set_suspended(&pdev->dev);
 	pm_suspend_ignore_children(&pdev->dev, true);
 	pm_runtime_enable(&pdev->dev);
+	mic_ldo_int(tx_priv);
 	if (is_used_tx_swr_gpio)
 		schedule_work(&tx_priv->tx_macro_add_child_devices_work);
 
