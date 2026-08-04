@@ -51,15 +51,18 @@ static int wcd937x_slave_bind(struct device *dev,
 
 	if (ret) {
 		/*
-		 * J607F: the wcd937x RX SWR slave (0x1170224) never
-		 * enumerates on rx_swr_ctrl -- the RX SWR channel is not
-		 * wired on this board.  Tolerate the failure so the codec
-		 * can still register and the TX (mic) path works.
-		 * The TX slave (0x1170223) must succeed.
+		 * J607F: neither the wcd937x RX SWR slave (0x1170224) nor
+		 * the TX SWR slave (0x1170223) enumerates on their swr
+		 * masters -- both SWR channels are not wired on this board
+		 * (the built-in mic is a SoC DMIC, not a SWR slave mic).
+		 * Tolerate both failures so the codec can still register
+		 * and its MIC BIAS1 (mic-bias LDO supply for the SoC DMIC)
+		 * gets powered; without it the DMIC has no bias -> silence.
 		 */
-		if ((pdev->addr & 0xFFFFFFFF) == 0x1170224) {
+		if ((pdev->addr & 0xFFFFFFFF) == 0x1170224 ||
+		    (pdev->addr & 0xFFFFFFFF) == 0x1170223) {
 			dev_info(&pdev->dev,
-				"%s: RX slave not enumerated (addr %lx), continuing\n",
+				"%s: SWR slave not enumerated (addr %lx), continuing\n",
 				__func__, pdev->addr);
 			pdev->dev_num = 0;
 			return 0;
