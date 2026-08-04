@@ -2938,11 +2938,6 @@ static void dwc3_ext_event_notify(struct dwc3_msm *mdwc)
 	 */
 	clear_bit(WAIT_FOR_LPM, &mdwc->inputs);
 
-	dev_err(mdwc->dev,
-		"DIAG: ext_event id_state=%d vbus=%d susp=%d w4lpm=%d drd=%d\n",
-		mdwc->id_state, mdwc->vbus_active, mdwc->suspend,
-		test_bit(WAIT_FOR_LPM, &mdwc->inputs), mdwc->drd_state);
-
 	if (mdwc->id_state == DWC3_ID_FLOAT) {
 		dev_dbg(mdwc->dev, "XCVR: ID set\n");
 		set_bit(ID, &mdwc->inputs);
@@ -3348,8 +3343,7 @@ static int dwc3_msm_id_notifier(struct notifier_block *nb,
 
 	mdwc->ext_idx = enb->idx;
 
-	dev_err(mdwc->dev, "DIAG: id_notifier event=%ld id=%d (idx=%d)\n",
-		event, id, enb->idx);
+	dev_dbg(mdwc->dev, "host:%ld (id:%d) event received\n", event, id);
 
 	mdwc->id_state = id;
 	dbg_event(0xFF, "id_state", mdwc->id_state);
@@ -3463,10 +3457,6 @@ static int dwc3_msm_psy_notifier(struct notifier_block *nb,
 		return NOTIFY_DONE;
 
 	power_supply_get_property(psy, POWER_SUPPLY_PROP_PRESENT, &val);
-
-	dev_err(mdwc->dev,
-		"DIAG: PSY PRESENT=%d vbus_active=%d drd_state=%d\n",
-		val.intval, mdwc->vbus_active, mdwc->drd_state);
 
 	if (val.intval && !mdwc->vbus_active) {
 		mdwc->vbus_active = true;
@@ -4168,17 +4158,11 @@ static int dwc3_msm_probe(struct platform_device *pdev)
 					POWER_SUPPLY_PROP_PRESENT, &pval);
 				if (pval.intval) {
 					mdwc->vbus_active = true;
-					dev_err(mdwc->dev,
-						"DIAG: vbus from PSY PRESENT=1\n");
 				} else {
 					mdwc->vbus_active = false;
-					dev_err(mdwc->dev,
-						"DIAG: PSY PRESENT=0 at probe, wait for plug\n");
 				}
 			} else {
 				mdwc->vbus_active = true;
-				dev_err(mdwc->dev,
-					"DIAG: no PSY device, force for DRD\n");
 			}
 
 			mdwc->psy_nb.notifier_call = dwc3_msm_psy_notifier;
@@ -4832,17 +4816,10 @@ static void dwc3_otg_sm_work(struct work_struct *w)
 		/* fall-through */
 	case DRD_STATE_IDLE:
 		if (test_bit(WAIT_FOR_LPM, &mdwc->inputs)) {
-			dev_err(mdwc->dev,
-				"DIAG: IDLE waiting LPM (w4lpm=1) id=%d bsv=%d\n",
-				test_bit(ID, &mdwc->inputs),
-				test_bit(B_SESS_VLD, &mdwc->inputs));
+			dev_dbg(mdwc->dev, "still not in lpm, wait.\n");
 			break;
 		}
 
-		dev_err(mdwc->dev,
-			"DIAG: IDLE eval id=%d bsv=%d\n",
-			test_bit(ID, &mdwc->inputs),
-			test_bit(B_SESS_VLD, &mdwc->inputs));
 		if (!test_bit(ID, &mdwc->inputs)) {
 			dev_dbg(mdwc->dev, "!id\n");
 			mdwc->drd_state = DRD_STATE_HOST_IDLE;

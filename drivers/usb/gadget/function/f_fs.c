@@ -3282,21 +3282,17 @@ static inline struct f_fs_opts *ffs_do_functionfs_bind(struct usb_function *f,
 	 */
 	if (!ffs_opts->no_configfs)
 		ffs_dev_lock();
-	/* Wait up to 30s for userspace to write functionfs descriptors.
+	/* Wait up to 5s for userspace to write functionfs descriptors.
 	 * adbd may be delayed by APEX activation on A16+. */
 	if (!ffs_opts->dev->desc_ready && ffs_opts->dev->ffs_data) {
-		pr_err("DIAG: ffs desc_ready=0, waiting (30s timeout)\n");
 		if (!ffs_opts->no_configfs)
 			ffs_dev_unlock();
 		ret = wait_event_interruptible_timeout(
 			ffs_opts->dev->ffs_data->wait,
 			ffs_opts->dev->desc_ready,
 			msecs_to_jiffies(5000));
-		if (ret <= 0) {
-			pr_err("DIAG: ffs wait failed ret=%d\n", ret);
+		if (ret <= 0)
 			return ERR_PTR(-ENODEV);
-		}
-		pr_err("DIAG: ffs desc_ready OK after wait\n");
 		if (!ffs_opts->no_configfs)
 			ffs_dev_lock();
 	}
