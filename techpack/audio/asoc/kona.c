@@ -8781,8 +8781,6 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 	uint index = 0;
 	struct clk *lpass_audio_hw_vote = NULL;
 
-	dev_info(&pdev->dev, "%s: probe enter\n", __func__);
-
 	if (!pdev->dev.of_node) {
 		dev_err(&pdev->dev, "%s: No platform supplied from device tree\n", __func__);
 		return -EINVAL;
@@ -8790,10 +8788,8 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 
 	pdata = devm_kzalloc(&pdev->dev,
 			sizeof(struct msm_asoc_mach_data), GFP_KERNEL);
-	if (!pdata) {
-		dev_err(&pdev->dev, "%s: failed to alloc pdata\n", __func__);
+	if (!pdata)
 		return -ENOMEM;
-	}
 
 	of_property_read_u32(pdev->dev.of_node,
 				"qcom,lito-is-v2-enabled",
@@ -8805,8 +8801,6 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 		ret = -EINVAL;
 		goto err;
 	}
-	dev_info(&pdev->dev, "%s: dailinks populated (%d links)\n",
-		 __func__, card->num_links);
 
 	card->dev = &pdev->dev;
 	platform_set_drvdata(pdev, card);
@@ -8828,24 +8822,16 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 
 	ret = msm_populate_dai_link_component_of_node(card);
 	if (ret) {
-		dev_err(&pdev->dev, "%s: msm_populate_dai_link_component_of_node failed %d, defer\n",
-			__func__, ret);
 		ret = -EPROBE_DEFER;
 		goto err;
 	}
 
 	ret = msm_init_aux_dev(pdev, card);
-	if (ret) {
-		dev_err(&pdev->dev, "%s: msm_init_aux_dev failed %d\n",
-			__func__, ret);
+	if (ret)
 		goto err;
-	}
 
-	dev_info(&pdev->dev, "%s: calling snd_soc_register_card\n", __func__);
 	ret = devm_snd_soc_register_card(&pdev->dev, card);
 	if (ret == -EPROBE_DEFER) {
-		dev_info(&pdev->dev, "%s: snd_soc_register_card deferred (codec_reg_done=%d)\n",
-			 __func__, codec_reg_done);
 		if (codec_reg_done)
 			ret = -EINVAL;
 		goto err;
@@ -8854,11 +8840,8 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 			__func__, ret);
 		goto err;
 	}
-	dev_info(&pdev->dev, "%s: snd_soc_register_card succeeded\n", __func__);
 	dev_info(&pdev->dev, "%s: Sound card %s registered\n",
 		 __func__, card->name);
-
-	dev_info(&pdev->dev, "%s: probe done\n", __func__);
 
 	/* Get maximum WSA device count for this platform */
 	ret = of_property_read_u32(pdev->dev.of_node,
@@ -9006,7 +8989,6 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 
 	return 0;
 err:
-	dev_err(&pdev->dev, "%s: probe failed ret=%d\n", __func__, ret);
 	devm_kfree(&pdev->dev, pdata);
 	return ret;
 }
