@@ -760,20 +760,12 @@ int drm_mode_getblob_ioctl(struct drm_device *dev,
 	struct drm_property_blob *blob;
 	int ret = 0;
 
-	pr_info("DSI_IB: getblob ENTER blob_id=%u length=%u\n",
-		out_resp->blob_id, (unsigned int)out_resp->length);
-
 	if (!drm_core_check_feature(dev, DRIVER_MODESET))
 		return -EINVAL;
 
 	blob = drm_property_lookup_blob(dev, out_resp->blob_id);
-	if (!blob) {
-		pr_info("DSI_IB: getblob NOT FOUND id=%u\n", out_resp->blob_id);
+	if (!blob)
 		return -ENOENT;
-	}
-
-	pr_info("DSI_IB: getblob FOUND id=%u len=%u data=[%.40s]\n",
-		out_resp->blob_id, blob->length, (char *)blob->data);
 
 	if (out_resp->length == blob->length) {
 		if (copy_to_user(u64_to_user_ptr(out_resp->data),

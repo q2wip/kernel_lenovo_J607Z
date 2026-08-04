@@ -1540,11 +1540,6 @@ static int sde_connector_atomic_get_property(struct drm_connector *connector,
 				val,
 				c_conn->display);
 
-	if (idx == CONNECTOR_PROP_SDE_INFO && c_conn->blob_caps)
-		pr_info("DSI_IB_GET: caps blob read len=%zu data=[%s]\n",
-			c_conn->blob_caps->length,
-			(char *)c_conn->blob_caps->data);
-
 	return rc;
 }
 
@@ -2062,17 +2057,6 @@ static int sde_connector_get_modes(struct drm_connector *connector)
 
 	mode_count = c_conn->ops.get_modes(connector, c_conn->display,
 			&avail_res);
-	pr_info("DSI_IB: get_modes name=%s type=%d mode_count=%d\n",
-		connector->name, c_conn->connector_type, mode_count);
-	if (c_conn->blob_caps) {
-		pr_info("DSI_IB: get_modes blob_caps=%p len=%zu data=[%.*s]\n",
-			c_conn->blob_caps,
-			c_conn->blob_caps->length,
-			(int)c_conn->blob_caps->length,
-			(char *)c_conn->blob_caps->data);
-	} else {
-		pr_info("DSI_IB: get_modes blob_caps=NULL\n");
-	}
 	if (!mode_count) {
 		SDE_ERROR_CONN(c_conn, "failed to get modes\n");
 		return 0;
@@ -2457,11 +2441,6 @@ int sde_connector_set_blob_data(struct drm_connector *conn,
 			SDE_KMS_INFO_DATA(info),
 			SDE_KMS_INFO_DATALEN(info),
 			prop_id);
-
-	if (prop_id == CONNECTOR_PROP_SDE_INFO && c_conn->blob_caps)
-		pr_info("DSI_IB: blob_caps assigned id=%u len=%zu\n",
-			c_conn->blob_caps->base.id,
-			c_conn->blob_caps->length);
 
 exit:
 	vfree(info);

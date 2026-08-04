@@ -1847,9 +1847,6 @@ int drm_mode_getconnector(struct drm_device *dev, void *data,
 	uint32_t __user *encoder_ptr;
 	LIST_HEAD(export_list);
 
-	pr_info("DSI_IB: getconn ENTER conn_id=%u pid=%d comm=%s\n",
-		out_resp->connector_id, task_pid_nr(current), current->comm);
-
 	if (!drm_core_check_feature(dev, DRIVER_MODESET))
 		return -EINVAL;
 
