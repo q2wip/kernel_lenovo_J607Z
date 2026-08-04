@@ -71,8 +71,7 @@ int wlfw_msa_mem_info_send_sync_msg(struct icnss_priv *priv)
 	if (!priv)
 		return -ENODEV;
 
-	icnss_pr_info("Sending MSA mem info (pa=%llx size=%zx), state: 0x%lx\n",
-		      priv->msa_pa, priv->msa_mem_size, priv->state);
+	icnss_pr_dbg("Sending MSA mem info, state: 0x%lx\n", priv->state);
 
 	req = kzalloc(sizeof(*req), GFP_KERNEL);
 	if (!req)
@@ -181,8 +180,8 @@ int wlfw_msa_ready_send_sync_msg(struct icnss_priv *priv)
 	if (!priv)
 		return -ENODEV;
 
-	icnss_pr_info("Sending MSA ready request message, state: 0x%lx\n",
-		      priv->state);
+	icnss_pr_dbg("Sending MSA ready request message, state: 0x%lx\n",
+		     priv->state);
 
 	req = kzalloc(sizeof(*req), GFP_KERNEL);
 	if (!req)
@@ -249,7 +248,7 @@ int wlfw_ind_register_send_sync_msg(struct icnss_priv *priv)
 	if (!priv)
 		return -ENODEV;
 
-	icnss_pr_info("Sending indication register message, state: 0x%lx\n",
+	icnss_pr_dbg("Sending indication register message, state: 0x%lx\n",
 		     priv->state);
 
 	req = kzalloc(sizeof(*req), GFP_KERNEL);
@@ -339,7 +338,7 @@ int wlfw_cap_send_sync_msg(struct icnss_priv *priv)
 	if (!priv)
 		return -ENODEV;
 
-	icnss_pr_info("Sending capability message, state: 0x%lx\n", priv->state);
+	icnss_pr_dbg("Sending capability message, state: 0x%lx\n", priv->state);
 
 	req = kzalloc(sizeof(*req), GFP_KERNEL);
 	if (!req)
@@ -1037,7 +1036,7 @@ void icnss_handle_rejuvenate(struct icnss_priv *priv)
 static void fw_ready_ind_cb(struct qmi_handle *qmi, struct sockaddr_qrtr *sq,
 			    struct qmi_txn *txn, const void *data)
 {
-	icnss_pr_info("Received FW Ready Indication\n");
+	icnss_pr_dbg("Received FW Ready Indication\n");
 
 	if (!txn) {
 		pr_err("spurious indication\n");
@@ -1057,7 +1056,7 @@ static void msa_ready_ind_cb(struct qmi_handle *qmi, struct sockaddr_qrtr *sq,
 	uint64_t msa_base_addr = priv->msa_pa;
 	phys_addr_t hang_data_phy_addr;
 
-	icnss_pr_info("Received MSA Ready Indication\n");
+	icnss_pr_dbg("Received MSA Ready Indication\n");
 
 	if (!txn) {
 		pr_err("spurious indication\n");
@@ -1292,9 +1291,8 @@ static int wlfw_new_server(struct qmi_handle *qmi,
 		return 0;
 	}
 
-	icnss_pr_info("WLFW server arrive: node %u port %u, state: 0x%lx\n",
-		      service->node, service->port,
-		      priv ? priv->state : 0);
+	icnss_pr_dbg("WLFW server arrive: node %u port %u\n",
+		     service->node, service->port);
 
 	event_data = kzalloc(sizeof(*event_data), GFP_KERNEL);
 	if (event_data == NULL)
@@ -1320,7 +1318,7 @@ static void wlfw_del_server(struct qmi_handle *qmi,
 		return;
 	}
 
-	icnss_pr_info("WLFW server delete\n");
+	icnss_pr_dbg("WLFW server delete\n");
 
 	if (priv) {
 		set_bit(ICNSS_DEL_SERVER, &priv->state);
