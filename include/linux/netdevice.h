@@ -2011,6 +2011,7 @@ struct net_device {
 	unsigned int		real_num_rx_queues;
 
 	struct bpf_prog __rcu	*xdp_prog;
+	struct xdp_dev_bulk_queue __percpu *xdp_bulkq;
 	unsigned long		gro_flush_timeout;
 	rx_handler_func_t __rcu	*rx_handler;
 	void __rcu		*rx_handler_data;
@@ -5004,4 +5005,6 @@ do {								\
 
 extern struct net_device *blackhole_netdev;
 
-#endif	/* _LINUX_NETDEVICE_H */
+int bpf_xdp_link_attach(const union bpf_attr *attr, struct bpf_prog *prog);
+
+#endif /* _LINUX_NETDEVICE_H */

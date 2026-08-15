@@ -3,6 +3,40 @@
 #include <linux/bpf.h>
 #include <linux/filter.h>
 #include <net/net_namespace.h>
+#include <linux/bpf-netns.h>
+#include <linux/errno.h>
+#include <linux/mutex.h>
+
+/*
+ * The vendor 4.19 struct net has no 5.10 BPF namespace state.  Keep the
+ * backported syscall surface, but fail these attachment modes closed instead
+ * of changing the layout and lifecycle used by vendor networking drivers.
+ */
+DEFINE_MUTEX(netns_bpf_mutex);
+
+int netns_bpf_prog_query(const union bpf_attr *attr,
+ union bpf_attr __user *uattr)
+{
+return -EOPNOTSUPP;
+}
+
+int netns_bpf_prog_attach(const union bpf_attr *attr, struct bpf_prog *prog)
+{
+return -EOPNOTSUPP;
+}
+
+int netns_bpf_prog_detach(const union bpf_attr *attr, enum bpf_prog_type ptype)
+{
+return -EOPNOTSUPP;
+}
+
+int netns_bpf_link_create(const union bpf_attr *attr, struct bpf_prog *prog)
+{
+return -EOPNOTSUPP;
+}
+
+/* Preserve the 5.10 implementation below as backport reference. */
+#if 0
 
 /*
  * Functions to manage BPF programs attached to netns
@@ -564,3 +598,4 @@ static int __init netns_bpf_init(void)
 }
 
 subsys_initcall(netns_bpf_init);
+#endif

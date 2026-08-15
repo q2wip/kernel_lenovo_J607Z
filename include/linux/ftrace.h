@@ -705,6 +705,21 @@ static inline bool is_ftrace_trampoline(unsigned long addr)
 	return false;
 }
 #endif /* CONFIG_DYNAMIC_FTRACE */
+#ifndef CONFIG_DYNAMIC_FTRACE_WITH_DIRECT_CALLS
+static inline int register_ftrace_direct(unsigned long ip, unsigned long addr)
+{
+        return -ENOTSUPP;
+}
+static inline int unregister_ftrace_direct(unsigned long ip, unsigned long addr)
+{
+        return -ENOTSUPP;
+}
+static inline int modify_ftrace_direct(unsigned long ip, unsigned long old_addr,
+                                       unsigned long new_addr)
+{
+        return -ENOTSUPP;
+}
+#endif
 
 /* totally disable ftrace - can not re-enable after this */
 void ftrace_kill(void);

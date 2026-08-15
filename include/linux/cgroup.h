@@ -624,6 +624,12 @@ static inline ino_t cgroup_ino(struct cgroup *cgrp)
 	return kernfs_ino(cgrp->kn);
 }
 
+/* Stable cgroup identity used by modern BPF helpers. */
+static inline u64 cgroup_id(struct cgroup *cgrp)
+{
+	return cgroup_ino(cgrp);
+}
+
 /* cft/css accessors for cftype->write() operation */
 static inline struct cftype *of_cft(struct kernfs_open_file *of)
 {

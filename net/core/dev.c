@@ -10540,3 +10540,7 @@ out:
 }
 
 subsys_initcall(net_dev_init);
+int bpf_xdp_link_attach(const union bpf_attr *attr, struct bpf_prog *prog)
+{
+	return -EOPNOTSUPP;
+}
