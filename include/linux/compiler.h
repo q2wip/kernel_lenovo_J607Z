@@ -392,3 +392,7 @@ static inline void *offset_to_ptr(const int *off)
 #define prevent_tail_call_optimization()	mb()
 
 #endif /* __LINUX_COMPILER_H */
+
+#ifndef fallthrough
+#define fallthrough do {} while (0)
+#endif

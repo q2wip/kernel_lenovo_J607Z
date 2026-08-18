@@ -13,6 +13,12 @@
 
 static struct vfsmount *nsfs_mnt;
 
+/* Match a namespace inode as exposed through nsfs. */
+bool ns_match(const struct ns_common *ns, dev_t dev, ino_t ino)
+{
+	return ns->inum == ino && nsfs_mnt && nsfs_mnt->mnt_sb->s_dev == dev;
+}
+
 static long ns_ioctl(struct file *filp, unsigned int ioctl,
 			unsigned long arg);
 static const struct file_operations ns_file_operations = {
@@ -252,10 +258,6 @@ out_invalid:
  *
  * Return: true if dev and ino matches the current nsfs.
  */
-bool ns_match(const struct ns_common *ns, dev_t dev, ino_t ino)
-{
-	return (ns->inum == ino) && (nsfs_mnt->mnt_sb->s_dev == dev);
-}
 
 
 static int nsfs_show_path(struct seq_file *seq, struct dentry *dentry)

@@ -160,7 +160,8 @@ void __xsk_map_flush(void)
 
 	list_for_each_entry_safe(xs, tmp, flush_list, flush_node) {
 		xsk_flush(xs);
-		__list_del_clearprev(&xs->flush_node);
+		list_del(&xs->flush_node);
+		xs->flush_node.prev = NULL;
 	}
 }
 

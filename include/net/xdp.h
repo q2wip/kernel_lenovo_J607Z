@@ -47,6 +47,8 @@ enum xdp_mem_type {
 #define XDP_XMIT_FLUSH		(1U << 0)	/* doorbell signal consumer */
 #define XDP_XMIT_FLAGS_MASK	XDP_XMIT_FLUSH
 
+#define DEV_MAP_BULK_SIZE 16
+
 struct xdp_mem_info {
 	u32 type; /* enum xdp_mem_type, but known size type */
 	u32 id;

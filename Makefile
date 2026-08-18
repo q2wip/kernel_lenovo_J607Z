@@ -1205,6 +1205,7 @@ cmd_link-vmlinux =                                                 \
 	$(if $(ARCH_POSTLINK), $(MAKE) -f $(ARCH_POSTLINK) $@, true)
 
 vmlinux: scripts/link-vmlinux.sh autoksyms_recursive $(vmlinux-deps) FORCE
+
 ifdef CONFIG_HEADERS_CHECK
 	$(Q)$(MAKE) -f $(srctree)/Makefile headers_check
 endif
@@ -1212,6 +1213,16 @@ ifdef CONFIG_GDB_SCRIPTS
 	$(Q)ln -fsn $(abspath $(srctree)/scripts/gdb/vmlinux-gdb.py)
 endif
 	+$(call if_changed,link-vmlinux)
+
+ifdef CONFIG_DEBUG_INFO_BTF
+vmlinux: $(RESOLVE_BTFIDS)
+
+$(RESOLVE_BTFIDS): $(srctree)/tools/bpf/resolve_btfids/Makefile \
+			$(srctree)/tools/bpf/resolve_btfids/main.c
+	$(Q)$(MAKE) -C $(srctree)/tools/bpf/resolve_btfids \
+		OUTPUT=$(abspath $(dir $@)) HOSTCC="$(HOSTCC)" \
+		HOSTCFLAGS="$(HOSTCFLAGS)" HOSTLDFLAGS="$(HOSTLDFLAGS)"
+endif
 
 # Build samples along the rest of the kernel. This needs headers_install.
 ifdef CONFIG_SAMPLES

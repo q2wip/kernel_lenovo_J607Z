@@ -530,6 +530,7 @@ else
 dtb-$(CONFIG_ARCH_LAGOON) += gauguin-sm6350.dtb
 endif
 
+dtb-y		+= lagoon.dtb lito.dtb litov2.dtb litomagnus.dtb orchid.dtb
 always		:= $(dtb-y)
 subdir-y	:= $(dts-dirs)
 clean-files    := *.dtb *.dtbo
