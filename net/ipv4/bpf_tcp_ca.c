@@ -95,6 +95,7 @@ static bool bpf_tcp_ca_is_valid_access(int off, int size,
 }
 
 static int bpf_tcp_ca_btf_struct_access(struct bpf_verifier_log *log,
+					const struct btf *btf,
 					const struct btf_type *t, int off,
 					int size, enum bpf_access_type atype,
 					u32 *next_btf_id)
@@ -102,7 +103,7 @@ static int bpf_tcp_ca_btf_struct_access(struct bpf_verifier_log *log,
 	size_t end;
 
 	if (atype == BPF_READ)
-		return btf_struct_access(log, t, off, size, atype, next_btf_id);
+		return btf_struct_access(log, btf, t, off, size, atype, next_btf_id);
 
 	if (t != tcp_sock_type) {
 		bpf_log(log, "only read is supported\n");
@@ -198,7 +199,7 @@ static int bpf_tcp_ca_init_member(const struct btf_type *t,
 	moff = btf_member_bit_offset(t, member) / 8;
 	switch (moff) {
 	case offsetof(struct tcp_congestion_ops, flags):
-		if (utcp_ca->flags & ~TCP_CONG_MASK)
+if (utcp_ca->flags & ~(TCP_CONG_NON_RESTRICTED | TCP_CONG_NEEDS_ECN))
 			return -EINVAL;
 		tcp_ca->flags = utcp_ca->flags;
 		return 1;

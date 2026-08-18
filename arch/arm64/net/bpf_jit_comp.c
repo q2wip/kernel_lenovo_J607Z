@@ -601,8 +601,23 @@ emit_cond_jmp:
 		}
 		emit(A64_B_(jmp_cond, jmp_offset), ctx);
 		break;
+	case BPF_JMP32 | BPF_JEQ | BPF_X:
+	case BPF_JMP32 | BPF_JGT | BPF_X:
+	case BPF_JMP32 | BPF_JLT | BPF_X:
+	case BPF_JMP32 | BPF_JGE | BPF_X:
+	case BPF_JMP32 | BPF_JLE | BPF_X:
+	case BPF_JMP32 | BPF_JNE | BPF_X:
+	case BPF_JMP32 | BPF_JSGT | BPF_X:
+	case BPF_JMP32 | BPF_JSLT | BPF_X:
+	case BPF_JMP32 | BPF_JSGE | BPF_X:
+	case BPF_JMP32 | BPF_JSLE | BPF_X:
+		emit(A64_CMP(0, dst, src), ctx);
+		goto emit_cond_jmp;
 	case BPF_JMP | BPF_JSET | BPF_X:
 		emit(A64_TST(1, dst, src), ctx);
+		goto emit_cond_jmp;
+	case BPF_JMP32 | BPF_JSET | BPF_X:
+		emit(A64_TST(0, dst, src), ctx);
 		goto emit_cond_jmp;
 	/* IF (dst COND imm) JUMP off */
 	case BPF_JMP | BPF_JEQ | BPF_K:
@@ -618,9 +633,26 @@ emit_cond_jmp:
 		emit_a64_mov_i(1, tmp, imm, ctx);
 		emit(A64_CMP(1, dst, tmp), ctx);
 		goto emit_cond_jmp;
+	case BPF_JMP32 | BPF_JEQ | BPF_K:
+	case BPF_JMP32 | BPF_JGT | BPF_K:
+	case BPF_JMP32 | BPF_JLT | BPF_K:
+	case BPF_JMP32 | BPF_JGE | BPF_K:
+	case BPF_JMP32 | BPF_JLE | BPF_K:
+	case BPF_JMP32 | BPF_JNE | BPF_K:
+	case BPF_JMP32 | BPF_JSGT | BPF_K:
+	case BPF_JMP32 | BPF_JSLT | BPF_K:
+	case BPF_JMP32 | BPF_JSGE | BPF_K:
+	case BPF_JMP32 | BPF_JSLE | BPF_K:
+		emit_a64_mov_i(0, tmp, imm, ctx);
+		emit(A64_CMP(0, dst, tmp), ctx);
+		goto emit_cond_jmp;
 	case BPF_JMP | BPF_JSET | BPF_K:
 		emit_a64_mov_i(1, tmp, imm, ctx);
 		emit(A64_TST(1, dst, tmp), ctx);
+		goto emit_cond_jmp;
+	case BPF_JMP32 | BPF_JSET | BPF_K:
+		emit_a64_mov_i(0, tmp, imm, ctx);
+		emit(A64_TST(0, dst, tmp), ctx);
 		goto emit_cond_jmp;
 	/* function call */
 	case BPF_JMP | BPF_CALL:

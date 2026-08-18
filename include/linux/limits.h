@@ -24,3 +24,7 @@
 #define S64_MIN		((s64)(-S64_MAX - 1))
 
 #endif /* _LINUX_LIMITS_H */
+
+#ifndef U32_MIN
+#define U32_MIN ((u32)0)
+#endif

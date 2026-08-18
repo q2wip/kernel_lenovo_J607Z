@@ -237,7 +237,7 @@ struct smb5 {
 	struct smb_dt_props	dt;
 };
 
-static int __debug_mask=0xff;
+static int __debug_mask;
 
 static ssize_t pd_disabled_show(struct device *dev, struct device_attribute
 				*attr, char *buf)
@@ -1095,7 +1095,7 @@ static int smb5_usb_get_prop(struct power_supply *psy,
 		}
 		break;
 	default:
-		pr_err("get prop %d is not supported in usb\n", psp);
+		pr_debug("get prop %d is not supported in usb\n", psp);
 		rc = -EINVAL;
 		break;
 	}

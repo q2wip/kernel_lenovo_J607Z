@@ -791,7 +791,7 @@ int inet_getname(struct socket *sock, struct sockaddr *uaddr,
 		sin->sin_port = inet->inet_sport;
 		sin->sin_addr.s_addr = addr;
 	}
-	if (cgroup_bpf_enabled)
+	if (cgroup_bpf_enabled(BPF_CGROUP_INET4_GETSOCKNAME))
 		BPF_CGROUP_RUN_SA_PROG_LOCK(sk, (struct sockaddr *)sin,
 					    peer ? BPF_CGROUP_INET4_GETPEERNAME :
 						   BPF_CGROUP_INET4_GETSOCKNAME,

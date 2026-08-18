@@ -260,6 +260,23 @@ static inline bool bpf_capable(void)
 	return capable(CAP_BPF) || capable(CAP_SYS_ADMIN);
 }
 
+/* Android 16 BPF backport compatibility: 4.19 has no CAP_PERFMON. */
+#ifndef CAP_PERFMON
+#define CAP_PERFMON CAP_SYS_ADMIN
+static inline bool perfmon_capable(void)
+{
+	return capable(CAP_SYS_ADMIN);
+}
+#endif
+
+#ifndef CAP_BPF
+#define CAP_BPF CAP_SYS_ADMIN
+static inline bool bpf_capable(void)
+{
+	return capable(CAP_SYS_ADMIN);
+}
+#endif
+
 /* audit system wants to get cap info from files as well */
 extern int get_vfs_caps_from_disk(const struct dentry *dentry, struct cpu_vfs_cap_data *cpu_caps);
 
