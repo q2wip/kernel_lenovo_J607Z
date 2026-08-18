@@ -6746,11 +6746,11 @@ irqreturn_t typec_or_rid_detection_change_irq_handler(int irq, void *data)
 
 	smblib_dbg(chg, PR_INTERRUPT, "IRQ: %s\n", irq_data->name);
 
-	smblib_err(chg,"%s:pogo state is :[%s]\n",__func__,pogoFlag ? "on":"off");
+	pr_debug("%s:pogo state is :[%s]\n",__func__,pogoFlag ? "on":"off");
 	if (pogoFlag) {
 		gpio_direction_output(chg->otg_en1_gpio,1);
 		msleep(1000);
-		smblib_err(chg,"%s:output high && delay 1s ==> otg_en1_gpio:[%d]\n",__func__,gpio_get_value(chg->otg_en1_gpio));
+		pr_debug("%s:output high && delay 1s ==> otg_en1_gpio:[%d]\n",__func__,gpio_get_value(chg->otg_en1_gpio));
 		gpio_direction_output(chg->otg_en1_gpio,0);
 		chg->real_charger_type = POWER_SUPPLY_TYPE_POGO;
 		pogo_reset_aicl_flag=0;
