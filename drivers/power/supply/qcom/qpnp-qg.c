@@ -2189,7 +2189,7 @@ static int qg_psy_get_property(struct power_supply *psy,
 			}
 			break ;
 		}
-		pr_info("pmic aux adc battery temp val:%d, and bettery fg temp bq27xxx_temperature=%d\n", pval->intval, bq27xxx_temperature);
+		pr_debug("pmic aux adc battery temp val:%d, and bettery fg temp bq27xxx_temperature=%d\n", pval->intval, bq27xxx_temperature);
 		if((((bq27xxx_temperature - pval->intval) > 4) && (pval->intval > 500)))
 			pval->intval = bq27xxx_temperature - 3;
 		if((((pval->intval - bq27xxx_temperature) > 4) && (pval->intval < 0)))

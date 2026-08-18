@@ -89,7 +89,7 @@ void aicl_status_dump(struct smb_charger *chg)
 {
 	u8 buf[5];
 	smblib_batch_read(chg, ICL_MAX_STATUS_REG, buf, 5);
-	pr_info("AICL STATUS(%x): %x %x %x %x %x", ICL_MAX_STATUS_REG, 
+	pr_debug("AICL STATUS(%x): %x %x %x %x %x", ICL_MAX_STATUS_REG, 
 		buf[0], buf[1], buf[2], buf[3], buf[4]);
 }
 #endif
@@ -3854,7 +3854,6 @@ int smblib_get_prop_typec_cc_orientation(struct smb_charger *chg,
 	if (stat & CC_ATTACHED_BIT) {
 		val->intval = (bool)(stat & CC_ORIENTATION_BIT) + 1;
 		typec_cc_orientation = val->intval;
-		printk("%s,typec_cc_orientation = val->intavl = %d\n",__func__,typec_cc_orientation);
 	}
 
 	return rc;

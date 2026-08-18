@@ -1360,7 +1360,6 @@ static int bq27xxx_battery_read_soc(struct bq27xxx_device_info *di)
 	else
 		soc = bq27xxx_read(di, BQ27XXX_REG_SOC, false);
 
-	dev_err(di->dev, "bq27xxx_battery_soc:%d   ===\n", soc);
 	if (soc < 0){
 		dev_err(di->dev, " error reading State-of-Charge\n");
 		dev_err(di->dev, "error bq27xxx_battery_soc_beforce:%d   ===\n", soc_before);
