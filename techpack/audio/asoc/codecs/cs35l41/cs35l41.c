@@ -459,6 +459,12 @@ static int cs35l41_do_fast_switch(struct cs35l41_private *cs35l41)
 	if (cs35l41->rev != CS35L41LV_CHIP_ID)
 		offset = 6;
 
+	if (cs35l41->fast_switch_file_idx + offset >= cs35l41->fast_switch_enum.items) {
+		dev_err(cs35l41->dev, "Invalid fast switch file index %u\n",
+			cs35l41->fast_switch_file_idx);
+		return -EINVAL;
+	}
+
 	fw_name	= cs35l41->fast_switch_names[cs35l41->fast_switch_file_idx + offset];
 	dev_dbg(cs35l41->dev, "fw_name:%s\n", fw_name);
 	ret	= request_firmware(&fw, fw_name, cs35l41->dev);
