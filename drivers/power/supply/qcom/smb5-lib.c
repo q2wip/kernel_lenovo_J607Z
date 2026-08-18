@@ -2087,7 +2087,6 @@ int smblib_get_prop_input_suspend(struct smb_charger *chg,
 	val->intval
 		= (get_client_vote(chg->usb_icl_votable, USER_VOTER) == 0)
 		 && get_client_vote(chg->dc_suspend_votable, USER_VOTER);
-	pr_err("longcheer,%s:get input_suspend =%d\n", __func__,val->intval);
 	return 0;
 }
 
@@ -2536,7 +2535,6 @@ int smblib_set_prop_input_suspend(struct smb_charger *chg,
 			(bool)val->intval ? "suspend" : "resume", rc);
 		return rc;
 	}
-	pr_err("longcheer,%s:usb_set input_suspend =%d\n", __func__,(bool)val->intval);
 
 	rc = vote(chg->dc_suspend_votable, USER_VOTER, (bool)val->intval, 0);
 	if (rc < 0) {
@@ -2544,7 +2542,6 @@ int smblib_set_prop_input_suspend(struct smb_charger *chg,
 			(bool)val->intval ? "suspend" : "resume", rc);
 		return rc;
 	}
-	pr_err("longcheer,%s:dc_set input_suspend =%d\n", __func__,(bool)val->intval);
 	power_supply_changed(chg->batt_psy);
 	return rc;
 }
