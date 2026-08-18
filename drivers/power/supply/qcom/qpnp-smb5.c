@@ -1095,7 +1095,7 @@ static int smb5_usb_get_prop(struct power_supply *psy,
 		}
 		break;
 	default:
-		pr_err("get prop %d is not supported in usb\n", psp);
+		pr_debug("get prop %d is not supported in usb\n", psp);
 		rc = -EINVAL;
 		break;
 	}

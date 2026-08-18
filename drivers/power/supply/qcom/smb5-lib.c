@@ -1436,7 +1436,7 @@ static int set_sdp_current(struct smb_charger *chg, int icl_ua)
 	int rc;
 	u8 icl_options;
 	const struct apsd_result *apsd_result = smblib_get_apsd_result(chg);
-	smblib_err(chg, "chg->real_charger_type=%d and chg->connector_type = %d\n", chg->real_charger_type, chg->connector_type);
+	pr_debug("chg->real_charger_type=%d and chg->connector_type = %d\n", chg->real_charger_type, chg->connector_type);
 	
 	/* power source is SDP */
 	switch (icl_ua) {
@@ -1536,13 +1536,13 @@ int smblib_set_icl_current(struct smb_charger *chg, int icl_ua)
 	}
 #endif
 
-	smblib_err(chg, "usb, pogo,otg path status=%d, %d, %d\n", usb_path_state, pogo_path_state,chg->otg_en);
-	smblib_err(chg, "usb real status= %d\n", pval.intval);
+	pr_debug("usb, pogo,otg path status=%d, %d, %d\n", usb_path_state, pogo_path_state,chg->otg_en);
+	pr_debug("usb real status= %d\n", pval.intval);
 
 
-	smblib_err(chg, "icl_ua=%d and suspend = %d\n", icl_ua, suspend);
-	smblib_err(chg, "chg->real_charger_type=%d and chg->connector_type = %d\n", chg->real_charger_type, chg->connector_type);
-	smblib_err(chg, "chg->typec_legacy=%d and chg->typec_mode = %d\n", chg->typec_legacy, chg->typec_mode);
+	pr_debug("icl_ua=%d and suspend = %d\n", icl_ua, suspend);
+	pr_debug("chg->real_charger_type=%d and chg->connector_type = %d\n", chg->real_charger_type, chg->connector_type);
+	pr_debug("chg->typec_legacy=%d and chg->typec_mode = %d\n", chg->typec_legacy, chg->typec_mode);
 	if (chg->chg_param.smb_version == PMI632_SUBTYPE)
 		schgm_flash_torch_priority(chg, suspend ? TORCH_BOOST_MODE :
 					TORCH_BUCK_MODE);
@@ -2252,7 +2252,7 @@ int smblib_get_prop_batt_status(struct smb_charger *chg,
 			val->intval = POWER_SUPPLY_STATUS_FULL;
 			break;
 		default:
-			smblib_err(chg, "real_charger_type = %d usb_online = %d typec_mode = %d\n", chg->real_charger_type,usb_online,chg->typec_mode);
+			pr_debug("real_charger_type = %d usb_online = %d typec_mode = %d\n", chg->real_charger_type,usb_online,chg->typec_mode);
 			val->intval = POWER_SUPPLY_STATUS_DISCHARGING;
 			break;
 		}
@@ -2411,7 +2411,7 @@ int smblib_get_prop_system_temp_level(struct smb_charger *chg,
 				union power_supply_propval *val)
 {
 	val->intval = chg->system_temp_level;
-	smblib_err(chg, "chg->system_temp_level is =%d\n", val->intval);
+	pr_debug("chg->system_temp_level is =%d\n", val->intval);
 	return 0;
 }
 
@@ -2583,8 +2583,7 @@ int smblib_set_prop_system_temp_level(struct smb_charger *chg,
 		return -EINVAL;
 
 	chg->system_temp_level = val->intval;
-        dump_stack();
-        smblib_err(chg, "chg->system_temp_level is =%d\n", chg->system_temp_level);
+        pr_debug("chg->system_temp_level is =%d\n", chg->system_temp_level);
 	if (chg->system_temp_level == chg->thermal_levels)
 		return vote(chg->chg_disable_votable,
 			THERMAL_DAEMON_VOTER, true, 0);
@@ -2592,7 +2591,7 @@ int smblib_set_prop_system_temp_level(struct smb_charger *chg,
 	vote(chg->chg_disable_votable, THERMAL_DAEMON_VOTER, false, 0);
 	if (chg->system_temp_level == 0)
 		return vote(chg->fcc_votable, THERMAL_DAEMON_VOTER, false, 0);
-        smblib_err(chg, "going to vote chg thermal mitigation is =%d with system temp level is =%d\n", chg->thermal_mitigation[chg->system_temp_level], 
+        pr_debug("going to vote chg thermal mitigation is =%d with system temp level is =%d\n", chg->thermal_mitigation[chg->system_temp_level], 
                                 chg->system_temp_level);
 	vote(chg->fcc_votable, THERMAL_DAEMON_VOTER, true,
 			chg->thermal_mitigation[chg->system_temp_level]);
@@ -2642,7 +2641,7 @@ int smblib_run_aicl(struct smb_charger *chg, int type)
 		return rc;
 
 #ifdef POGO_SUPPORT
-	smblib_err(chg, "%s AICL\n", (type == RERUN_AICL) ? "re-running" : "re-starting");
+	pr_debug("%s AICL\n", (type == RERUN_AICL) ? "re-running" : "re-starting");
 #else
 	smblib_dbg(chg, PR_MISC, "re-running AICL\n");
 #endif
@@ -5388,7 +5387,7 @@ irqreturn_t usbin_uv_irq_handler(int irq, void *data)
 #ifdef POGO_SUPPORT
 	usb_path_state = gpio_get_value(chg->usb_state_gpio) ? 0:1;
 	pogo_path_state = gpio_get_value(chg->pogo_state_gpio) ? 0:1;
-	smblib_err(chg, "usb, pogo,otg path status=%d, %d, %d\n", usb_path_state, pogo_path_state,chg->otg_en);
+	pr_debug("usb, pogo,otg path status=%d, %d, %d\n", usb_path_state, pogo_path_state,chg->otg_en);
 	if ((chg->otg_en||(usb_path_state == 0))&&pogo_path_state == 1) {
 		chg->hvdcp_disable = true;
 		smblib_hvdcp_detect_enable(chg, false);
@@ -5803,7 +5802,7 @@ void smblib_usb_plugin_locked(struct smb_charger *chg)
 #ifdef POGO_SUPPORT
 	usb_path_state = gpio_get_value(chg->usb_state_gpio) ? 0:1;
 	pogo_path_state = gpio_get_value(chg->pogo_state_gpio) ? 0:1;
-	smblib_err(chg, "usb, pogo,otg path status=%d, %d, %d\n", usb_path_state, pogo_path_state,chg->otg_en);
+	pr_debug("usb, pogo,otg path status=%d, %d, %d\n", usb_path_state, pogo_path_state,chg->otg_en);
 	if (((chg->otg_en)||(usb_path_state == 0))&&pogo_path_state == 1) {
 		chg->chg_freq.freq_5V = 1050;
 		if (vbus_rising) {
