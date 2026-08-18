@@ -99,6 +99,12 @@ struct wm_adsp {
 	bool fatal_error;
 	bool tuning_has_prefix;
 
+	/* DT-provided firmware file names (adsps/adsp@.../firmware subtree),
+	 * indexed by WM_ADSP_FW_* enum (WM_ADSP_NUM_FW entries).
+	 */
+	const char *dt_wmfw_file[13];
+	const char *dt_bin_file[13];
+
 	struct list_head ctl_list;
 
 	struct work_struct boot_work;

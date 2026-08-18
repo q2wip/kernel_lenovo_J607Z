@@ -2132,8 +2132,11 @@ static int wm_adsp_load(struct wm_adsp *dsp)
 	if (file == NULL)
 		return -ENOMEM;
 
-	snprintf(file, PAGE_SIZE, "%s-%s-%s.wmfw", dsp->part, dsp->fwf_name,
-		 wm_adsp_fw[dsp->fw].file);
+	if (dsp->dt_wmfw_file[dsp->fw])
+		snprintf(file, PAGE_SIZE, "%s", dsp->dt_wmfw_file[dsp->fw]);
+	else
+		snprintf(file, PAGE_SIZE, "%s-%s-%s.wmfw", dsp->part,
+			 dsp->fwf_name, wm_adsp_fw[dsp->fw].file);
 	file[PAGE_SIZE - 1] = '\0';
 
 	ret = request_firmware(&firmware, file, dsp->dev);
@@ -2958,7 +2961,9 @@ static int wm_adsp_load_coeff(struct wm_adsp *dsp)
 	if (file == NULL)
 		return -ENOMEM;
 
-	if (dsp->tuning_has_prefix && dsp->component->name_prefix)
+	if (dsp->dt_bin_file[dsp->fw])
+		snprintf(file, PAGE_SIZE, "%s", dsp->dt_bin_file[dsp->fw]);
+	else if (dsp->tuning_has_prefix && dsp->component->name_prefix)
 		snprintf(file, PAGE_SIZE, "%s-%s-%s-%s.bin",
 			 dsp->component->name_prefix, dsp->part,
 			 dsp->fwf_name, wm_adsp_fw[dsp->fw].file);
@@ -3027,6 +3032,7 @@ static int wm_adsp_load_coeff(struct wm_adsp *dsp)
 		switch (type) {
 		case (WMFW_NAME_TEXT << 8):
 		case (WMFW_INFO_TEXT << 8):
+		case (WMFW_METADATA << 8):
 			break;
 		case (WMFW_ABSOLUTE << 8):
 			/*
@@ -3156,6 +3162,62 @@ static int wm_adsp_create_name(struct wm_adsp *dsp)
 		dsp->fwf_name = p;
 		for (; *p != 0; ++p)
 			*p = tolower(*p);
+	}
+
+	return 0;
+}
+
+static const char *const wm_adsp_dt_fw_names[] = {
+	[WM_ADSP_FW_SPK_PROT] = "protection",
+	[WM_ADSP_FW_SPK_CALI] = "calibration",
+	[WM_ADSP_FW_SPK_DIAG] = "diagnostic",
+	[WM_ADSP_FW_MISC]     = "misc",
+};
+
+/*
+ * Parse firmware file names from device tree:
+ *   adsps/adsp@<reg>/firmware/<name> { cirrus,wmfw-file; cirrus,bin-file; }
+ * The adsp node is matched against dsp->base; the child node name selects
+ * the WM_ADSP_FW_* entry. Falls back to default naming when not found.
+ */
+static int wm_adsp_of_parse_fw_files(struct wm_adsp *dsp)
+{
+	struct device_node *np = dsp->dev->of_node;
+	struct device_node *adsps, *core = NULL, *fws, *fw = NULL;
+	unsigned int addr;
+	int ret, i;
+
+	if (!np)
+		return -ENODEV;
+
+	adsps = of_get_child_by_name(np, "adsps");
+	if (!adsps)
+		return -ENODEV;
+
+	while ((core = of_get_next_child(adsps, core)) != NULL) {
+		ret = of_property_read_u32(core, "reg", &addr);
+		if (ret == 0 && addr == dsp->base)
+			break;
+	}
+	if (!core)
+		return -ENODEV;
+
+	fws = of_get_child_by_name(core, "firmware");
+	if (!fws)
+		return -ENODEV;
+
+	while ((fw = of_get_next_child(fws, fw)) != NULL) {
+		for (i = 0; i < ARRAY_SIZE(wm_adsp_dt_fw_names); i++) {
+			if (!wm_adsp_dt_fw_names[i])
+				continue;
+			if (strcmp(fw->name, wm_adsp_dt_fw_names[i]))
+				continue;
+			of_property_read_string(fw, "cirrus,wmfw-file",
+						&dsp->dt_wmfw_file[i]);
+			of_property_read_string(fw, "cirrus,bin-file",
+						&dsp->dt_bin_file[i]);
+			break;
+		}
 	}
 
 	return 0;
@@ -3916,6 +3978,8 @@ int wm_halo_init(struct wm_adsp *dsp, struct mutex *rate_lock)
 				     GFP_KERNEL);
 	dsp->tx_rate_cache = kcalloc(dsp->n_tx_channels, sizeof(u8),
 				     GFP_KERNEL);
+
+	wm_adsp_of_parse_fw_files(dsp);
 
 	dsp->data_word_size = WM_ADSP_DATA_WORD_SIZE_DEFAULT;
 	dsp->data_word_mask = WM_ADSP_DATA_WORD_MASK_DEFAULT;

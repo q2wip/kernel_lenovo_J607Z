@@ -456,7 +456,13 @@ static int cs35l41_do_fast_switch(struct cs35l41_private *cs35l41)
 
 	data_ctl_buf	= NULL;
 
-	if (cs35l41->rev != CS35L41LV_CHIP_ID)
+	/*
+	 * The static cs35l41_fast_switch_text[] table carries both the
+	 * non-revB2 (0-5) and revB2 (6-11) name blocks; non-LV chips need
+	 * the +6 offset. DT-provided names are already per-amp and final.
+	 */
+	if (cs35l41->fast_switch_names == cs35l41_fast_switch_text &&
+	    cs35l41->rev != CS35L41LV_CHIP_ID)
 		offset = 6;
 
 	if (cs35l41->fast_switch_file_idx + offset >= cs35l41->fast_switch_enum.items) {
