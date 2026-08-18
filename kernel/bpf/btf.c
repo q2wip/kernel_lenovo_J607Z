@@ -174,7 +174,7 @@
 #define BITS_ROUNDUP_BYTES(bits) \
 	(BITS_ROUNDDOWN_BYTES(bits) + !!BITS_PER_BYTE_MASKED(bits))
 
-#define BTF_INFO_MASK 0x8f00ffff
+#define BTF_INFO_MASK 0x9f00ffff
 #define BTF_INT_MASK 0x0fffffff
 #define BTF_TYPE_ID_VALID(type_id) ((type_id) <= BTF_MAX_TYPE)
 #define BTF_STR_OFFSET_VALID(name_off) ((name_off) <= BTF_MAX_NAME_OFFSET)
@@ -281,6 +281,10 @@ static const char * const btf_kind_str[NR_BTF_KINDS] = {
 	[BTF_KIND_FUNC_PROTO]	= "FUNC_PROTO",
 	[BTF_KIND_VAR]		= "VAR",
 	[BTF_KIND_DATASEC]	= "DATASEC",
+	[BTF_KIND_FLOAT]		= "FLOAT",
+	[BTF_KIND_DECL_TAG]	= "DECL_TAG",
+	[BTF_KIND_TYPE_TAG]	= "TYPE_TAG",
+	[BTF_KIND_ENUM64]	= "ENUM64",
 };
 
 static const char *btf_type_str(const struct btf_type *t)
@@ -574,6 +578,7 @@ static bool btf_type_has_size(const struct btf_type *t)
 	case BTF_KIND_STRUCT:
 	case BTF_KIND_UNION:
 	case BTF_KIND_ENUM:
+	case BTF_KIND_ENUM64:
 	case BTF_KIND_DATASEC:
 		return true;
 	}
@@ -608,6 +613,16 @@ static const struct btf_array *btf_type_array(const struct btf_type *t)
 static const struct btf_enum *btf_type_enum(const struct btf_type *t)
 {
 	return (const struct btf_enum *)(t + 1);
+}
+
+static const struct btf_enum64 *btf_type_enum64(const struct btf_type *t)
+{
+	return (const struct btf_enum64 *)(t + 1);
+}
+
+static u64 btf_enum64_value(const struct btf_enum64 *e)
+{
+	return ((u64)e->val_hi32 << 32) | e->val_lo32;
 }
 
 static const struct btf_var *btf_type_var(const struct btf_type *t)
@@ -920,6 +935,7 @@ static const char *btf_show_name(struct btf_show *show)
 			parens = "{";
 		break;
 	case BTF_KIND_ENUM:
+	case BTF_KIND_ENUM64:
 		prefix = "enum";
 		break;
 	default:
@@ -1146,7 +1162,7 @@ static void *btf_show_obj_safe(struct btf_show *show,
 		size_left = btf_show_obj_size_left(show, data);
 		if (size_left > BTF_SHOW_OBJ_SAFE_SIZE)
 			size_left = BTF_SHOW_OBJ_SAFE_SIZE;
-		show->state.status = probe_kernel_read(show->obj.safe,
+		show->state.status = copy_from_kernel_nofault(show->obj.safe,
 							      data, size_left);
 		if (!show->state.status) {
 			show->obj.data = data;
@@ -1701,6 +1717,7 @@ __btf_resolve_size(const struct btf *btf, const struct btf_type *type,
 		case BTF_KIND_STRUCT:
 		case BTF_KIND_UNION:
 		case BTF_KIND_ENUM:
+		case BTF_KIND_ENUM64:
 			size = type->size;
 			goto resolved;
 
@@ -3247,11 +3264,6 @@ static s32 btf_enum_check_meta(struct btf_verifier_env *env,
 		return -EINVAL;
 	}
 
-	if (btf_type_kflag(t)) {
-		btf_verifier_log_type(env, t, "Invalid btf_info kind_flag");
-		return -EINVAL;
-	}
-
 	if (t->size > 8 || !is_power_of_2(t->size)) {
 		btf_verifier_log_type(env, t, "Unexpected size");
 		return -EINVAL;
@@ -3334,6 +3346,91 @@ static struct btf_kind_operations enum_ops = {
 	.check_kflag_member = btf_enum_check_kflag_member,
 	.log_details = btf_enum_log,
 	.show = btf_enum_show,
+};
+
+static s32 btf_enum64_check_meta(struct btf_verifier_env *env,
+					 const struct btf_type *t,
+					 u32 meta_left)
+{
+	const struct btf_enum64 *enums = btf_type_enum64(t);
+	struct btf *btf = env->btf;
+	u16 i, nr_enums;
+	u32 meta_needed;
+
+	nr_enums = btf_type_vlen(t);
+	meta_needed = nr_enums * sizeof(*enums);
+	if (meta_left < meta_needed) {
+		btf_verifier_log_basic(env, t,
+				       "meta_left:%u meta_needed:%u",
+				       meta_left, meta_needed);
+		return -EINVAL;
+	}
+
+	if (t->size > 8 || !is_power_of_2(t->size)) {
+		btf_verifier_log_type(env, t, "Unexpected size");
+		return -EINVAL;
+	}
+
+	if (t->name_off &&
+	    !btf_name_valid_identifier(env->btf, t->name_off)) {
+		btf_verifier_log_type(env, t, "Invalid name");
+		return -EINVAL;
+	}
+
+	btf_verifier_log_type(env, t, NULL);
+	for (i = 0; i < nr_enums; i++) {
+		if (!btf_name_offset_valid(btf, enums[i].name_off)) {
+			btf_verifier_log(env, "\tInvalid name_offset:%u",
+					 enums[i].name_off);
+			return -EINVAL;
+		}
+		if (!enums[i].name_off ||
+		    !btf_name_valid_identifier(btf, enums[i].name_off)) {
+			btf_verifier_log_type(env, t, "Invalid name");
+			return -EINVAL;
+		}
+	}
+
+	return meta_needed;
+}
+
+static void btf_enum64_show(const struct btf *btf, const struct btf_type *t,
+				    u32 type_id, void *data, u8 bits_offset,
+				    struct btf_show *show)
+{
+	const struct btf_enum64 *enums = btf_type_enum64(t);
+	u32 i, nr_enums = btf_type_vlen(t);
+	void *safe_data;
+	s64 v;
+
+	safe_data = btf_show_start_type(show, t, type_id, data);
+	if (!safe_data)
+		return;
+
+	v = *(s64 *)safe_data;
+	for (i = 0; i < nr_enums; i++) {
+		if (v != (s64)btf_enum64_value(enums + i))
+			continue;
+		btf_show_type_value(show, "%s",
+				    __btf_name_by_offset(btf, enums[i].name_off));
+		btf_show_end_type(show);
+		return;
+	}
+
+	if (btf_type_kflag(t))
+		btf_show_type_value(show, "%lld", v);
+	else
+		btf_show_type_value(show, "%llu", (u64)v);
+	btf_show_end_type(show);
+}
+
+static struct btf_kind_operations enum64_ops = {
+	.check_meta = btf_enum64_check_meta,
+	.resolve = btf_df_resolve,
+	.check_member = btf_enum_check_member,
+	.check_kflag_member = btf_enum_check_kflag_member,
+	.log_details = btf_enum_log,
+	.show = btf_enum64_show,
 };
 
 static s32 btf_func_proto_check_meta(struct btf_verifier_env *env,
@@ -3802,6 +3899,7 @@ static const struct btf_kind_operations * const kind_ops[NR_BTF_KINDS] = {
 	[BTF_KIND_STRUCT] = &struct_ops,
 	[BTF_KIND_UNION] = &struct_ops,
 	[BTF_KIND_ENUM] = &enum_ops,
+	[BTF_KIND_ENUM64] = &enum64_ops,
 	[BTF_KIND_FWD] = &fwd_ops,
 	[BTF_KIND_TYPEDEF] = &modifier_ops,
 	[BTF_KIND_VOLATILE] = &modifier_ops,
@@ -3818,6 +3916,7 @@ static s32 btf_check_meta(struct btf_verifier_env *env,
 			  u32 meta_left)
 {
 	u32 saved_meta_left = meta_left;
+	const struct btf_kind_operations *ops;
 	s32 var_meta_size;
 
 	if (meta_left < sizeof(*t)) {
@@ -3846,7 +3945,13 @@ static s32 btf_check_meta(struct btf_verifier_env *env,
 		return -EINVAL;
 	}
 
-	var_meta_size = btf_type_ops(t)->check_meta(env, t, meta_left);
+	ops = btf_type_ops(t);
+	if (!ops) {
+		btf_verifier_log(env, "[%u] Unsupported kind:%u",
+				 env->log_type_id, BTF_INFO_KIND(t->info));
+		return -EOPNOTSUPP;
+	}
+	var_meta_size = ops->check_meta(env, t, meta_left);
 	if (var_meta_size < 0)
 		return var_meta_size;
 

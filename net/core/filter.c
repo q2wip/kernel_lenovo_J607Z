@@ -3982,6 +3982,8 @@ static const struct bpf_func_proto bpf_xdp_adjust_meta_proto = {
 static int __bpf_tx_xdp_map(struct net_device *dev_rx, void *fwd,
 			    struct bpf_map *map, struct xdp_buff *xdp)
 {
+	int err;
+
 	switch (map->map_type) {
 	case BPF_MAP_TYPE_DEVMAP:
 	case BPF_MAP_TYPE_DEVMAP_HASH: {
@@ -4003,7 +4005,7 @@ static int __bpf_tx_xdp_map(struct net_device *dev_rx, void *fwd,
 	case BPF_MAP_TYPE_XSKMAP: {
 		struct xdp_sock *xs = fwd;
 
-		err = __xsk_map_redirect(map, xdp, xs);
+		err = __xsk_map_redirect(xs, xdp);
 		return err;
 	}
 	default:
@@ -4014,15 +4016,9 @@ static int __bpf_tx_xdp_map(struct net_device *dev_rx, void *fwd,
 
 void xdp_do_flush(void)
 {
-	struct bpf_redirect_info *ri = this_cpu_ptr(&bpf_redirect_info);
-	struct bpf_map *map = ri->map_to_flush;
-
 	__dev_flush();
 	__cpu_map_flush();
-
-	ri->map_to_flush = NULL;
-	if (map && map->map_type == BPF_MAP_TYPE_XSKMAP)
-		__xsk_map_flush(map);
+	__xsk_map_flush();
 }
 
 static inline void *__xdp_map_lookup_elem(struct bpf_map *map, u32 index)

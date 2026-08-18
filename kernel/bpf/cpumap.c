@@ -199,9 +199,10 @@ static int cpu_map_kthread_run(void *data)
         struct bpf_cpu_map_entry *rcpu = data;
 
         set_current_state(TASK_INTERRUPTIBLE);
-        while (!kthread_should_stop() || !__ptr_ring_empty(rcpu->queue)) {
-                unsigned int processed = 0, drops = 0, sched = 0;
-                struct xdp_frame *xdpf;
+	while (!kthread_should_stop() || !__ptr_ring_empty(rcpu->queue)) {
+		unsigned int processed = 0, drops = 0, sched = 0;
+		struct xdp_cpumap_stats stats = {};
+		struct xdp_frame *xdpf;
 
                 if (__ptr_ring_empty(rcpu->queue)) {
                         set_current_state(TASK_INTERRUPTIBLE);
@@ -232,8 +233,8 @@ static int cpu_map_kthread_run(void *data)
                         if (++processed == CPUMAP_BATCH)
                                 break;
                 }
-                trace_xdp_cpumap_kthread(rcpu->map_id, processed,
-                                         drops, sched);
+		trace_xdp_cpumap_kthread(rcpu->map_id, processed,
+					 drops, sched, &stats);
                 local_bh_enable();
         }
         __set_current_state(TASK_RUNNING);
@@ -588,7 +589,7 @@ int cpu_map_enqueue(struct bpf_cpu_map_entry *rcpu, struct xdp_buff *xdp,
 {
 	struct xdp_frame *xdpf;
 
-	xdpf = convert_to_xdp_frame(xdp);
+	xdpf = xdp_convert_buff_to_frame(xdp);
 	if (unlikely(!xdpf))
 		return -EOVERFLOW;
 

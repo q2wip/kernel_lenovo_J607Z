@@ -36,11 +36,6 @@
 #include <linux/kernel_stat.h>
 #include <linux/cgroup.h>
 #include <linux/perf_event.h>
-
-void perf_event_bpf_event(struct bpf_prog *prog,
-                          enum perf_bpf_event_type type, u16 flags)
-{
-}
 #include <linux/trace_events.h>
 #include <linux/hw_breakpoint.h>
 #include <linux/mm_types.h>

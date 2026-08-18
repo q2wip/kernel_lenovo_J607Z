@@ -76,6 +76,7 @@ const static struct bpf_func_proto bpf_bprm_opts_set_proto = {
 	.arg2_type	= ARG_ANYTHING,
 };
 
+#ifdef CONFIG_IMA
 BPF_CALL_3(bpf_ima_inode_hash, struct inode *, inode, void *, dst, u32, size)
 {
 	return ima_inode_hash(inode, dst, size);
@@ -98,6 +99,7 @@ const static struct bpf_func_proto bpf_ima_inode_hash_proto = {
 	.arg3_type	= ARG_CONST_SIZE,
 	.allowed	= bpf_ima_inode_hash_allowed,
 };
+#endif
 
 static const struct bpf_func_proto *
 bpf_lsm_func_proto(enum bpf_func_id func_id, const struct bpf_prog *prog)
@@ -121,8 +123,10 @@ bpf_lsm_func_proto(enum bpf_func_id func_id, const struct bpf_prog *prog)
 		return &bpf_task_storage_delete_proto;
 	case BPF_FUNC_bprm_opts_set:
 		return &bpf_bprm_opts_set_proto;
+	#ifdef CONFIG_IMA
 	case BPF_FUNC_ima_inode_hash:
 		return prog->aux->sleepable ? &bpf_ima_inode_hash_proto : NULL;
+	#endif
 	default:
 		return tracing_prog_func_proto(func_id, prog);
 	}

@@ -307,7 +307,8 @@ sk_storage_lookup(struct sock *sk, struct bpf_map *map, bool cacheit_lockit)
 	struct bpf_sk_storage *sk_storage;
 	struct bpf_sk_storage_map *smap;
 
-	sk_storage = rcu_dereference(sk->sk_bpf_storage);
+	sk_storage = (struct bpf_sk_storage *)
+		rcu_dereference(sk->sk_bpf_storage);
 	if (!sk_storage)
 		return NULL;
 
@@ -408,7 +409,8 @@ static struct bpf_sk_storage_data *sk_storage_update(struct sock *sk,
 		return ERR_PTR(-EINVAL);
 
 	smap = (struct bpf_sk_storage_map *)map;
-	sk_storage = rcu_dereference(sk->sk_bpf_storage);
+	sk_storage = (struct bpf_sk_storage *)
+		rcu_dereference(sk->sk_bpf_storage);
 	if (!sk_storage || hlist_empty(&sk_storage->list)) {
 		/* Very first elem for this sk */
 		err = check_flags(NULL, map_flags);
@@ -517,6 +519,90 @@ static int sk_storage_delete(struct sock *sk, struct bpf_map *map)
 	return 0;
 }
 
+static int sk_storage_alloc(struct sock *sk,
+			    struct bpf_sk_storage_map *smap,
+			    struct bpf_sk_storage_elem *first_selem);
+
+static struct bpf_sk_storage_elem *
+bpf_sk_storage_clone_elem(struct sock *newsk,
+				  struct bpf_sk_storage_map *smap,
+				  struct bpf_sk_storage_elem *selem)
+{
+	struct bpf_sk_storage_elem *copy;
+
+	copy = selem_alloc(smap, newsk, NULL, true);
+	if (!copy)
+		return NULL;
+
+	if (map_value_has_spin_lock(&smap->map))
+		copy_map_value_locked(&smap->map, SDATA(copy)->data,
+				      SDATA(selem)->data, true);
+	else
+		copy_map_value(&smap->map, SDATA(copy)->data,
+			       SDATA(selem)->data);
+
+	return copy;
+}
+
+int bpf_sk_storage_clone(const struct sock *sk, struct sock *newsk)
+{
+	struct bpf_sk_storage *new_storage = NULL;
+	struct bpf_sk_storage *sk_storage;
+	struct bpf_sk_storage_elem *selem;
+	int ret = 0;
+
+	RCU_INIT_POINTER(newsk->sk_bpf_storage, NULL);
+
+	rcu_read_lock();
+	sk_storage = (struct bpf_sk_storage *)
+		rcu_dereference(sk->sk_bpf_storage);
+	if (!sk_storage || hlist_empty(&sk_storage->list))
+		goto out;
+
+	hlist_for_each_entry_rcu(selem, &sk_storage->list, snode) {
+		struct bpf_sk_storage_elem *copy;
+		struct bpf_sk_storage_map *smap;
+		struct bpf_map *map;
+
+		smap = rcu_dereference(SDATA(selem)->smap);
+		if (!(smap->map.map_flags & BPF_F_CLONE))
+			continue;
+
+		map = bpf_map_inc_not_zero(&smap->map);
+		if (IS_ERR(map))
+			continue;
+
+		copy = bpf_sk_storage_clone_elem(newsk, smap, selem);
+		if (!copy) {
+			ret = -ENOMEM;
+			bpf_map_put(map);
+			goto out;
+		}
+
+		if (new_storage) {
+			selem_link_map(smap, copy);
+			__selem_link_sk(new_storage, copy);
+		} else {
+			ret = sk_storage_alloc(newsk, smap, copy);
+			if (ret) {
+				kfree(copy);
+				atomic_sub(smap->elem_size,
+					   &newsk->sk_omem_alloc);
+				bpf_map_put(map);
+				goto out;
+			}
+
+			new_storage = (struct bpf_sk_storage *)
+				rcu_dereference(newsk->sk_bpf_storage);
+		}
+		bpf_map_put(map);
+	}
+
+out:
+	rcu_read_unlock();
+	return ret;
+}
+
 /* Called by __sk_destruct() */
 void bpf_sk_storage_free(struct sock *sk)
 {
@@ -526,7 +612,8 @@ void bpf_sk_storage_free(struct sock *sk)
 	struct hlist_node *n;
 
 	rcu_read_lock();
-	sk_storage = rcu_dereference(sk->sk_bpf_storage);
+	sk_storage = (struct bpf_sk_storage *)
+		rcu_dereference(sk->sk_bpf_storage);
 	if (!sk_storage) {
 		rcu_read_unlock();
 		return;
@@ -798,6 +885,16 @@ const struct bpf_func_proto bpf_sk_storage_get_proto = {
 	.ret_type	= RET_PTR_TO_MAP_VALUE_OR_NULL,
 	.arg1_type	= ARG_CONST_MAP_PTR,
 	.arg2_type	= ARG_PTR_TO_SOCKET,
+	.arg3_type	= ARG_PTR_TO_MAP_VALUE_OR_NULL,
+	.arg4_type	= ARG_ANYTHING,
+};
+
+const struct bpf_func_proto bpf_sk_storage_get_cg_sock_proto = {
+	.func		= bpf_sk_storage_get,
+	.gpl_only	= false,
+	.ret_type	= RET_PTR_TO_MAP_VALUE_OR_NULL,
+	.arg1_type	= ARG_CONST_MAP_PTR,
+	.arg2_type	= ARG_PTR_TO_CTX,
 	.arg3_type	= ARG_PTR_TO_MAP_VALUE_OR_NULL,
 	.arg4_type	= ARG_ANYTHING,
 };

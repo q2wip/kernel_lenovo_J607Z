@@ -100,7 +100,7 @@ BPF_CALL_3(bpf_probe_read, void *, dst, u32, size, const void *, unsafe_ptr)
 {
 	int ret;
 
-	ret = probe_kernel_read(dst, unsafe_ptr, size);
+	ret = copy_from_kernel_nofault(dst, unsafe_ptr, size);
 	if (unlikely(ret < 0))
 		memset(dst, 0, size);
 
@@ -136,7 +136,7 @@ BPF_CALL_3(bpf_probe_write_user, void *, unsafe_ptr, const void *, src,
 	if (!access_ok(VERIFY_WRITE, unsafe_ptr, size))
 		return -EPERM;
 
-	return probe_kernel_write(unsafe_ptr, src, size);
+	return copy_to_user_nofault((void __user *)unsafe_ptr, src, size);
 }
 
 static const struct bpf_func_proto bpf_probe_write_user_proto = {
@@ -223,7 +223,7 @@ BPF_CALL_5(bpf_trace_printk, char *, fmt, u32, fmt_size, u64, arg1,
 					break;
 				}
 				buf[0] = 0;
-				strncpy_from_unsafe(buf,
+				strncpy_from_kernel_nofault(buf,
 						    (void *) (long) unsafe_addr,
 						    sizeof(buf));
 			}
@@ -523,7 +523,7 @@ BPF_CALL_3(bpf_probe_read_str, void *, dst, u32, size,
 	int ret;
 
 	/*
-	 * The strncpy_from_unsafe() call will likely not fill the entire
+	 * The strncpy_from_kernel_nofault() call will likely not fill the entire
 	 * buffer, but that's okay in this circumstance as we're probing
 	 * arbitrary memory anyway similar to bpf_probe_read() and might
 	 * as well probe the stack. Thus, memory is explicitly cleared
@@ -531,7 +531,7 @@ BPF_CALL_3(bpf_probe_read_str, void *, dst, u32, size,
 	 * code altogether don't copy garbage; otherwise length of string
 	 * is returned that can be used for bpf_perf_event_output() et al.
 	 */
-	ret = strncpy_from_unsafe(dst, unsafe_ptr, size);
+	ret = strncpy_from_kernel_nofault(dst, unsafe_ptr, size);
 	if (unlikely(ret < 0))
 		memset(dst, 0, size);
 

@@ -20,8 +20,10 @@
 #include <linux/set_memory.h>
 #include <linux/kallsyms.h>
 #include <linux/if_vlan.h>
+#include <linux/sockptr.h>
 
 #include <net/sch_generic.h>
+#include <net/net_namespace.h>
 
 #include <uapi/linux/filter.h>
 #include <uapi/linux/bpf.h>
@@ -662,12 +664,22 @@ struct bpf_skb_data_end {
 };
 
 
+struct bpf_nh_params {
+	u32 nh_family;
+	union {
+		u32 ipv4_nh;
+		struct in6_addr ipv6_nh;
+	};
+};
+
 struct bpf_redirect_info {
-	u32 ifindex;
 	u32 flags;
+	u32 tgt_index;
+	void *tgt_value;
 	struct bpf_map *map;
 	struct bpf_map *map_to_flush;
 	u32 kern_flags;
+	struct bpf_nh_params nh;
 };
 
 DECLARE_PER_CPU(struct bpf_redirect_info, bpf_redirect_info);
@@ -761,7 +773,7 @@ static inline u32 bpf_prog_run_clear_cb(const struct bpf_prog *prog,
 }
 
 static __always_inline u32 bpf_prog_run_xdp(const struct bpf_prog *prog,
-					    struct xdp_buff *xdp)
+						    struct xdp_buff *xdp)
 {
 	/* Caller needs to hold rcu_read_lock() (!), otherwise program
 	 * can be released while still running, or map elements could be
@@ -771,6 +783,8 @@ static __always_inline u32 bpf_prog_run_xdp(const struct bpf_prog *prog,
 	 */
 	return BPF_PROG_RUN(prog, xdp);
 }
+
+void bpf_prog_change_xdp(struct bpf_prog *prev_prog, struct bpf_prog *prog);
 
 static inline u32 bpf_prog_insn_size(const struct bpf_prog *prog)
 {
@@ -814,6 +828,12 @@ bpf_ctx_narrow_access_ok(u32 off, u32 size, u32 size_default)
 {
 	return size <= size_default && (size & (size - 1)) == 0;
 }
+
+#define bpf_ctx_wide_access_ok(off, size, type, field) \
+	(size == sizeof(__u64) && \
+	 off >= offsetof(type, field) && \
+	 off + sizeof(__u64) <= offsetofend(type, field) && \
+	 off % sizeof(__u64) == 0)
 
 static inline u8
 bpf_ctx_narrow_access_offset(u32 off, u32 size, u32 size_default)
@@ -903,7 +923,8 @@ int sk_reuseport_attach_filter(struct sock_fprog *fprog, struct sock *sk);
 int sk_reuseport_attach_bpf(u32 ufd, struct sock *sk);
 void sk_reuseport_prog_free(struct bpf_prog *prog);
 int sk_detach_filter(struct sock *sk);
-int sk_get_filter(struct sock *sk, struct sock_filter __user *filter,
+int copy_bpf_fprog_from_user(struct sock_fprog *dst, sockptr_t src, int len);
+int sk_get_filter(struct sock *sk, sockptr_t filter,
 		  unsigned int len);
 
 bool sk_filter_charge(struct sock *sk, struct sk_filter *fp);
@@ -970,7 +991,7 @@ static inline int xdp_ok_fwd_dev(const struct net_device *fwd,
 	return 0;
 }
 
-/* The pair of xdp_do_redirect and xdp_do_flush_map MUST be called in the
+/* The pair of xdp_do_redirect and xdp_do_flush MUST be called in the
  * same cpu context. Further for best results no more than a single map
  * for the do_redirect/do_flush pair should be used. This limitation is
  * because we only track one map and force a flush when the map changes.
@@ -981,7 +1002,8 @@ int xdp_do_generic_redirect(struct net_device *dev, struct sk_buff *skb,
 int xdp_do_redirect(struct net_device *dev,
 		    struct xdp_buff *xdp,
 		    struct bpf_prog *prog);
-void xdp_do_flush_map(void);
+void xdp_do_flush(void);
+#define xdp_do_flush_map xdp_do_flush
 
 void bpf_warn_invalid_xdp_action(u32 act);
 
@@ -1256,6 +1278,10 @@ struct bpf_sock_ops_kern {
 		u32 replylong[4];
 	};
 	u32	is_fullsock;
+	struct sk_buff	*syn_skb;
+	struct sk_buff	*skb;
+	void	*skb_data_end;
+	u32	remaining_opt_len;
 	u64	temp;			/* temp and everything after is not
 					 * initialized to 0 before calling
 					 * the BPF program. New fields that
@@ -1294,5 +1320,126 @@ struct bpf_sockopt_kern {
 	s32		optlen;
 	s32		retval;
 };
+
+struct bpf_sk_lookup_kern {
+	u16		family;
+	u16		protocol;
+	__be16		sport;
+	u16		dport;
+	struct {
+		__be32 saddr;
+		__be32 daddr;
+	} v4;
+	struct {
+		const struct in6_addr *saddr;
+		const struct in6_addr *daddr;
+	} v6;
+	struct sock	*selected_sk;
+	bool		no_reuseport;
+};
+
+extern struct static_key_false bpf_sk_lookup_enabled;
+
+#define BPF_PROG_SK_LOOKUP_RUN_ARRAY(array, ctx, func) \
+	({ \
+		struct bpf_sk_lookup_kern *_ctx = &(ctx); \
+		struct bpf_prog_array_item *_item; \
+		struct sock *_selected_sk = NULL; \
+		bool _no_reuseport = false; \
+		struct bpf_prog *_prog; \
+		bool _all_pass = true; \
+		u32 _ret; \
+		migrate_disable(); \
+		_item = &(array)->items[0]; \
+		while ((_prog = READ_ONCE(_item->prog))) { \
+			_ctx->selected_sk = _selected_sk; \
+			_ctx->no_reuseport = _no_reuseport; \
+			_ret = func(_prog, _ctx); \
+			if (_ret == SK_PASS && _ctx->selected_sk) { \
+				_selected_sk = _ctx->selected_sk; \
+				_no_reuseport = _ctx->no_reuseport; \
+			} else if (_ret == SK_DROP && _all_pass) { \
+				_all_pass = false; \
+			} \
+			_item++; \
+		} \
+		_ctx->selected_sk = _selected_sk; \
+		_ctx->no_reuseport = _no_reuseport; \
+		migrate_enable(); \
+		_all_pass || _selected_sk ? SK_PASS : SK_DROP; \
+	})
+
+static inline bool bpf_sk_lookup_run_v4(struct net *net, int protocol,
+					const __be32 saddr, const __be16 sport,
+					const __be32 daddr, const u16 dport,
+					struct sock **psk)
+{
+	struct bpf_prog_array *run_array;
+	struct sock *selected_sk = NULL;
+	bool no_reuseport = false;
+
+	rcu_read_lock();
+	run_array = rcu_dereference(net->bpf.run_array[NETNS_BPF_SK_LOOKUP]);
+	if (run_array) {
+		struct bpf_sk_lookup_kern ctx = {
+			.family = AF_INET,
+			.protocol = protocol,
+			.v4.saddr = saddr,
+			.v4.daddr = daddr,
+			.sport = sport,
+			.dport = dport,
+		};
+		u32 act;
+
+		act = BPF_PROG_SK_LOOKUP_RUN_ARRAY(run_array, ctx, BPF_PROG_RUN);
+		if (act == SK_PASS) {
+			selected_sk = ctx.selected_sk;
+			no_reuseport = ctx.no_reuseport;
+		} else {
+			selected_sk = ERR_PTR(-ECONNREFUSED);
+		}
+	}
+	rcu_read_unlock();
+	*psk = selected_sk;
+	return no_reuseport;
+}
+
+#if IS_ENABLED(CONFIG_IPV6)
+static inline bool bpf_sk_lookup_run_v6(struct net *net, int protocol,
+					const struct in6_addr *saddr,
+					const __be16 sport,
+					const struct in6_addr *daddr,
+					const u16 dport, struct sock **psk)
+{
+	struct bpf_prog_array *run_array;
+	struct sock *selected_sk = NULL;
+	bool no_reuseport = false;
+
+	rcu_read_lock();
+	run_array = rcu_dereference(net->bpf.run_array[NETNS_BPF_SK_LOOKUP]);
+	if (run_array) {
+		struct bpf_sk_lookup_kern ctx = {
+			.family = AF_INET6,
+			.protocol = protocol,
+			.v6.saddr = saddr,
+			.v6.daddr = daddr,
+			.sport = sport,
+			.dport = dport,
+		};
+		u32 act;
+
+		act = BPF_PROG_SK_LOOKUP_RUN_ARRAY(run_array, ctx, BPF_PROG_RUN);
+		if (act == SK_PASS) {
+			selected_sk = ctx.selected_sk;
+			no_reuseport = ctx.no_reuseport;
+		} else {
+			selected_sk = ERR_PTR(-ECONNREFUSED);
+		}
+	}
+	rcu_read_unlock();
+	*psk = selected_sk;
+	return no_reuseport;
+}
+#endif
 
 #endif /* __LINUX_FILTER_H__ */

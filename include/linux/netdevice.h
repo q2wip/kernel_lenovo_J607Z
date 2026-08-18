@@ -2040,8 +2040,6 @@ struct net_device {
 	unsigned int		tx_queue_len;
 	spinlock_t		tx_global_lock;
 
-	struct xdp_dev_bulk_queue __percpu *xdp_bulkq;
-
 #ifdef CONFIG_XPS
 	struct xps_dev_maps __rcu *xps_cpus_map;
 	struct xps_dev_maps __rcu *xps_rxqs_map;

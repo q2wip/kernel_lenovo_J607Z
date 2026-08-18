@@ -18,8 +18,33 @@
 #include <linux/bpf_lsm.h>
 #include <linux/btf_ids.h>
 #include <linux/fdtable.h>
+#include <linux/file.h>
+#include <linux/proc_fs.h>
+#include <linux/fs.h>
 
 DEFINE_BPF_STORAGE_CACHE(task_cache);
+
+static struct pid *bpf_pidfd_get_pid(unsigned int fd, unsigned int *flags)
+{
+	struct fd f = fdget(fd);
+	struct pid *pid;
+
+	if (!f.file)
+		return ERR_PTR(-EBADF);
+
+	if (f.file->f_op == &pidfd_fops)
+		pid = f.file->private_data;
+	else
+		pid = tgid_pidfd_to_pid(f.file);
+
+	if (IS_ERR(pid))
+		goto out;
+
+	*flags = f.file->f_flags & O_CLOEXEC;
+out:
+	fdput(f);
+	return pid;
+}
 
 static struct bpf_local_storage __rcu **task_storage_ptr(void *owner)
 {
@@ -109,7 +134,7 @@ static void *bpf_pid_task_storage_lookup_elem(struct bpf_map *map, void *key)
 	int fd, err;
 
 	fd = *(int *)key;
-	pid = pidfd_get_pid(fd, &f_flags);
+	pid = bpf_pidfd_get_pid(fd, &f_flags);
 	if (IS_ERR(pid))
 		return ERR_CAST(pid);
 
@@ -141,7 +166,7 @@ static int bpf_pid_task_storage_update_elem(struct bpf_map *map, void *key,
 	int fd, err;
 
 	fd = *(int *)key;
-	pid = pidfd_get_pid(fd, &f_flags);
+	pid = bpf_pidfd_get_pid(fd, &f_flags);
 	if (IS_ERR(pid))
 		return PTR_ERR(pid);
 
@@ -185,7 +210,7 @@ static int bpf_pid_task_storage_delete_elem(struct bpf_map *map, void *key)
 	int fd, err;
 
 	fd = *(int *)key;
-	pid = pidfd_get_pid(fd, &f_flags);
+	pid = bpf_pidfd_get_pid(fd, &f_flags);
 	if (IS_ERR(pid))
 		return PTR_ERR(pid);
 

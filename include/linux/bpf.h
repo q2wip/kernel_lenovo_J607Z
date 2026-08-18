@@ -143,6 +143,11 @@ struct bpf_map_ops {
 	ANDROID_KABI_RESERVE(2);
 };
 
+struct bpf_map_memory {
+	u32 pages;
+	struct user_struct *user;
+};
+
 struct bpf_map {
 	/* The first two cachelines with read-mostly members of which some
 	 * are also accessed in fast-path (e.g. ops, max_entries).
@@ -163,6 +168,7 @@ struct bpf_map {
 	u32 btf_key_type_id;
 	u32 btf_value_type_id;
 	struct btf *btf;
+	struct bpf_map_memory memory;
 #ifdef CONFIG_MEMCG_KMEM
 	struct mem_cgroup *memcg;
 #endif
@@ -1275,6 +1281,12 @@ void bpf_map_inc_with_uref(struct bpf_map *map);
 struct bpf_map * __must_check bpf_map_inc_not_zero(struct bpf_map *map);
 void bpf_map_put_with_uref(struct bpf_map *map);
 void bpf_map_put(struct bpf_map *map);
+int bpf_map_charge_memlock(struct bpf_map *map, u32 pages);
+void bpf_map_uncharge_memlock(struct bpf_map *map, u32 pages);
+int bpf_map_charge_init(struct bpf_map_memory *mem, u64 size);
+void bpf_map_charge_finish(struct bpf_map_memory *mem);
+void bpf_map_charge_move(struct bpf_map_memory *dst,
+			 struct bpf_map_memory *src);
 void *bpf_map_area_alloc(u64 size, int numa_node);
 void *bpf_map_area_mmapable_alloc(u64 size, int numa_node);
 void bpf_map_area_free(void *base);
@@ -1795,32 +1807,6 @@ bool bpf_offload_dev_match(struct bpf_prog *prog, struct net_device *netdev);
 
 void unpriv_ebpf_notify(int new_state);
 
-#if defined(CONFIG_XDP_SOCKETS)
-struct xdp_sock;
-struct xdp_sock *__xsk_map_lookup_elem(struct bpf_map *map, u32 key);
-int __xsk_map_redirect(struct bpf_map *map, struct xdp_buff *xdp,
-                       struct xdp_sock *xs);
-void __xsk_map_flush(struct bpf_map *map);
-#else
-struct xdp_sock;
-static inline struct xdp_sock *__xsk_map_lookup_elem(struct bpf_map *map,
-                                                     u32 key)
-{
-        return NULL;
-}
-
-static inline int __xsk_map_redirect(struct bpf_map *map,
-                                     struct xdp_buff *xdp,
-                                     struct xdp_sock *xs)
-{
-        return -EOPNOTSUPP;
-}
-
-static inline void __xsk_map_flush(struct bpf_map *map)
-{
-}
-#endif
-
 #if defined(CONFIG_NET) && defined(CONFIG_BPF_SYSCALL)
 int bpf_prog_offload_init(struct bpf_prog *prog, union bpf_attr *attr);
 
@@ -1864,7 +1850,6 @@ static inline void bpf_map_offload_map_free(struct bpf_map *map)
 #endif /* CONFIG_NET && CONFIG_BPF_SYSCALL */
 
 #if defined(CONFIG_INET) && defined(CONFIG_BPF_SYSCALL)
-#ifdef CONFIG_BPF_STREAM_PARSER
 int sock_map_prog_update(struct bpf_map *map, struct bpf_prog *prog,
 			 struct bpf_prog *old, u32 which);
 int sock_map_get_from_fd(const union bpf_attr *attr, struct bpf_prog *prog);
@@ -1873,33 +1858,6 @@ int sock_map_update_elem_sys(struct bpf_map *map, void *key, void *value, u64 fl
 void sock_map_unhash(struct sock *sk);
 void sock_map_destroy(struct sock *sk);
 void sock_map_close(struct sock *sk, long timeout);
-#else
-static inline int sock_map_prog_update(struct bpf_map *map,
-				       struct bpf_prog *prog,
-				       struct bpf_prog *old, u32 which)
-{
-	return -EOPNOTSUPP;
-}
-
-static inline int sock_map_get_from_fd(const union bpf_attr *attr,
-				       struct bpf_prog *prog)
-{
-	return -EINVAL;
-}
-
-static inline int sock_map_prog_detach(const union bpf_attr *attr,
-				       enum bpf_prog_type ptype)
-{
-	return -EOPNOTSUPP;
-}
-
-static inline int sock_map_update_elem_sys(struct bpf_map *map, void *key, void *value,
-					   u64 flags)
-{
-	return -EOPNOTSUPP;
-}
-#endif /* CONFIG_BPF_STREAM_PARSER */
-
 void bpf_sk_reuseport_detach(struct sock *sk);
 int bpf_fd_reuseport_array_lookup_elem(struct bpf_map *map, void *key,
 				       void *value);

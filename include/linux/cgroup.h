@@ -304,9 +304,16 @@ void css_task_iter_end(struct css_task_iter *it);
  * Inline functions.
  */
 
+/* returns ino associated with a cgroup */
+static inline ino_t cgroup_ino(struct cgroup *cgrp)
+{
+	return kernfs_ino(cgrp->kn);
+}
+
+/* Stable cgroup identity used by modern BPF helpers. */
 static inline u64 cgroup_id(struct cgroup *cgrp)
 {
-	return cgrp->kn->id;
+	return cgroup_ino(cgrp);
 }
 
 /**
@@ -616,18 +623,6 @@ static inline bool cgroup_is_populated(struct cgroup *cgrp)
 {
 	return cgrp->nr_populated_csets + cgrp->nr_populated_domain_children +
 		cgrp->nr_populated_threaded_children;
-}
-
-/* returns ino associated with a cgroup */
-static inline ino_t cgroup_ino(struct cgroup *cgrp)
-{
-	return kernfs_ino(cgrp->kn);
-}
-
-/* Stable cgroup identity used by modern BPF helpers. */
-static inline u64 cgroup_id(struct cgroup *cgrp)
-{
-	return cgroup_ino(cgrp);
 }
 
 /* cft/css accessors for cftype->write() operation */

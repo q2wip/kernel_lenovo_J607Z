@@ -13,6 +13,10 @@
 #include <net/tcp.h>
 #include <net/strparser.h>
 
+void sock_map_unhash(struct sock *sk);
+void sock_map_destroy(struct sock *sk);
+void sock_map_close(struct sock *sk, long timeout);
+
 #define MAX_MSG_FRAGS			MAX_SKB_FRAGS
 #define NR_MSG_FRAG_IDS			(MAX_MSG_FRAGS + 1)
 
