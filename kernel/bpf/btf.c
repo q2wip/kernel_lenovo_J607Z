@@ -3966,9 +3966,24 @@ static int btf_check_all_metas(struct btf_verifier_env *env)
 	struct btf_header *hdr;
 	void *cur, *end;
 
+	if (!btf || !env)
+		return -EINVAL;
 	hdr = &btf->hdr;
+	if (!btf->nohdr_data || !btf->data)
+		return -EINVAL;
+	/* type_off / type_len must be within data_size - hdr_len */
+	if (hdr->type_off > btf->data_size ||
+	    hdr->type_len > btf->data_size ||
+	    hdr->hdr_len > btf->data_size ||
+	    hdr->type_off + hdr->type_len > btf->data_size - hdr->hdr_len)
+		return -EINVAL;
+	if (hdr->type_off & (sizeof(u32) - 1))
+		return -EINVAL;
 	cur = btf->nohdr_data + hdr->type_off;
 	end = cur + hdr->type_len;
+	if (cur < btf->nohdr_data || end < cur ||
+	    end > btf->data + btf->data_size)
+		return -EINVAL;
 
 	env->log_type_id = btf->base_btf ? btf->start_id : 1;
 	while (cur < end) {
