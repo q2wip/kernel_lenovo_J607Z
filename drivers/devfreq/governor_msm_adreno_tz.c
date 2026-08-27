@@ -37,14 +37,15 @@ static DEFINE_SPINLOCK(suspend_lock);
 #define MAX_TZ_VERSION		0
 
 /*
- * CEILING is 20msec of accumulated busy time. With FLOOR 40msec, load at
- * ~50% busy crosses it every update and jumps the GPU to max frequency.
- * Verified on lito bring-up: UI rendering is client-composed (HWC
- * fallback) and needs the full 800MHz - scroll jank is 61% with default
- * DVFS vs 6% pinned at max. The stock 50msec ceiling only produced
- * transient 800MHz spikes.
+ * CEILING is 30msec of accumulated busy time. With FLOOR 40msec the GPU
+ * jumps to max frequency only at sustained ~75% load (CEILING/FLOOR);
+ * lighter loads are handled by the TZ governor on averaged samples.
+ * Verified on lito bring-up: UI client-composition needs the full 800MHz
+ * (scroll jank 61% at min-freq DVFS vs 6% pinned at max), but with HWC
+ * device composition the mid levels suffice, so reserve the 800MHz jump
+ * for heavier workloads. Tune by adjusting CEILING relative to FLOOR.
  */
-#define CEILING			20000
+#define CEILING			30000
 #define TZ_RESET_ID		0x3
 #define TZ_UPDATE_ID		0x4
 #define TZ_INIT_ID		0x6
