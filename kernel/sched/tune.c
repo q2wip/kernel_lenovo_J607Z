@@ -812,8 +812,40 @@ schedtune_css_free(struct cgroup_subsys_state *css)
 	kfree(st);
 }
 
+/*
+ * schedtune_css_online - apply platform-default schedtune settings.
+ *
+ * Android 16 removed the framework-side schedtune configuration, so the
+ * interactive boost groups are created with zeroed tunables and nothing
+ * ever raises them again. On lito (SM7250) this leaves the big (A76)
+ * cluster idle at min frequency while the 6 silver (A55) cores saturate,
+ * starving audio/app threads during playback (verified: CPU PSI avg10
+ * drops from ~16 to ~9 with top-app boost=10 + prefer_idle=1).
+ *
+ * Userspace may still override these defaults via the schedtune sysfs
+ * files; this only initializes the groups to the QCOM reference values.
+ */
+static int schedtune_css_online(struct cgroup_subsys_state *css)
+{
+	struct schedtune *st = css_st(css);
+
+	if (!css->cgroup || !css->cgroup->kn)
+		return 0;
+
+	if (!strcmp(css->cgroup->kn->name, "top-app")) {
+		st->boost = 10;
+		st->prefer_idle = 1;
+	} else if (!strcmp(css->cgroup->kn->name, "foreground")) {
+		st->boost = 5;
+		st->prefer_idle = 1;
+	}
+
+	return 0;
+}
+
 struct cgroup_subsys schedtune_cgrp_subsys = {
 	.css_alloc	= schedtune_css_alloc,
+	.css_online	= schedtune_css_online,
 	.css_free	= schedtune_css_free,
 	.attach		= schedtune_attach,
 	.can_attach	= schedtune_can_attach,
