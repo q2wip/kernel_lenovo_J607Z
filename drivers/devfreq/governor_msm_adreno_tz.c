@@ -22,10 +22,14 @@ static DEFINE_SPINLOCK(tz_lock);
 static DEFINE_SPINLOCK(sample_lock);
 static DEFINE_SPINLOCK(suspend_lock);
 /*
- * FLOOR is 5msec to capture up to 3 re-draws
- * per frame for 60fps content.
+ * FLOOR is 40msec to accumulate ~3 samples (each 12-20msec) so the TZ
+ * governor receives averaged load instead of single spiky samples.
+ * Observed on lito bring-up: per-sample busy alternates 0-90% and the
+ * stock 5msec floor made every single sample trigger a TZ update, so
+ * the GPU dithered between the two lowest power levels (253-355MHz,
+ * 91.5% of all GPU time) even under sustained 50% load.
  */
-#define FLOOR		        5000
+#define FLOOR		        40000
 /*
  * MIN_BUSY is 1 msec for the sample to be sent
  */
@@ -33,10 +37,14 @@ static DEFINE_SPINLOCK(suspend_lock);
 #define MAX_TZ_VERSION		0
 
 /*
- * CEILING is 50msec, larger than any standard
- * frame length, but less than the idle timer.
+ * CEILING is 20msec of accumulated busy time. With FLOOR 40msec, load at
+ * ~50% busy crosses it every update and jumps the GPU to max frequency.
+ * Verified on lito bring-up: UI rendering is client-composed (HWC
+ * fallback) and needs the full 800MHz - scroll jank is 61% with default
+ * DVFS vs 6% pinned at max. The stock 50msec ceiling only produced
+ * transient 800MHz spikes.
  */
-#define CEILING			50000
+#define CEILING			20000
 #define TZ_RESET_ID		0x3
 #define TZ_UPDATE_ID		0x4
 #define TZ_INIT_ID		0x6
