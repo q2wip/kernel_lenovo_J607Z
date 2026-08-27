@@ -132,7 +132,14 @@ unsigned int sysctl_sched_wakeup_granularity		= 1000000UL;
 unsigned int normalized_sysctl_sched_wakeup_granularity	= 1000000UL;
 
 const_debug unsigned int sysctl_sched_migration_cost	= 500000UL;
-DEFINE_PER_CPU_READ_MOSTLY(int, sched_load_boost);
+/*
+ * Per-CPU sched_load_boost: WALT target-load offset. QCOM reference
+ * (init.qcom.post_boot.sh) sets -6 (= target load 85) on every CPU, but
+ * on this A16 bring-up only part of that tuning survives boot, leaving
+ * the freq ramp default (target load 90). Default to the reference value
+ * so the ramp is uniform and independent of userspace script state.
+ */
+DEFINE_PER_CPU_READ_MOSTLY(int, sched_load_boost) = -6;
 
 #ifdef CONFIG_SMP
 /*
