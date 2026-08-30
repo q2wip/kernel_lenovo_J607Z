@@ -37,15 +37,18 @@ static DEFINE_SPINLOCK(suspend_lock);
 #define MAX_TZ_VERSION		0
 
 /*
- * CEILING is 30msec of accumulated busy time. With FLOOR 40msec the GPU
- * jumps to max frequency only at sustained ~75% load (CEILING/FLOOR);
+ * CEILING is 20msec of accumulated busy time. With FLOOR 40msec the GPU
+ * jumps to max frequency at sustained ~50% load (CEILING/FLOOR);
  * lighter loads are handled by the TZ governor on averaged samples.
  * Verified on lito bring-up: UI client-composition needs the full 800MHz
  * (scroll jank 61% at min-freq DVFS vs 6% pinned at max), but with HWC
  * device composition the mid levels suffice, so reserve the 800MHz jump
- * for heavier workloads. Tune by adjusting CEILING relative to FLOOR.
+ * for heavier workloads. 2026-08-30: shade (blur + SF CLIENT blend) sits
+ * at ~50% busy and janks at 253MHz; lowered from 30msec (~75%) to 20msec
+ * so the jump triggers on shade animations too. Tune by adjusting CEILING
+ * relative to FLOOR.
  */
-#define CEILING			30000
+#define CEILING			20000
 #define TZ_RESET_ID		0x3
 #define TZ_UPDATE_ID		0x4
 #define TZ_INIT_ID		0x6
